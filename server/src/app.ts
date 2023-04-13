@@ -6,7 +6,26 @@ import './controllers/index';
 
 export const app = express();
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+class startupMiddleware {
+  static configMiddleware(): void {
+    this.configBodyParser();
+  }
 
-app.use(AppRouter.router);
+  private static configBodyParser(): void {
+    app.use(express.urlencoded({ extended: false }));
+    app.use(express.json());
+  }
+}
+
+class Routers {
+  static setUpAllRouters(): void {
+    this.configRouters();
+  }
+
+  private static configRouters(): void {
+    app.use(AppRouter.router);
+  }
+}
+
+startupMiddleware.configMiddleware();
+Routers.setUpAllRouters();

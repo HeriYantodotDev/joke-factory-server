@@ -1,18 +1,18 @@
 /* eslint-disable-next-line no-undef */
 module.exports = {
+  // prettier-ignore
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended',
+    'plugin:prettier',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 2016,
+    ecmaVersion: 2020,
     sourceType: 'module',
-    project: './tsconfig.json',
+    project: './server/tsconfig.eslint.json',
   },
   plugins: ['@typescript-eslint', 'prettier'],
-  root: true,
   rules: {
     eqeqeq: 'warn',
     'prettier/prettier': [
