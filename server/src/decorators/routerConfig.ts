@@ -21,9 +21,9 @@ export function routerConfig(routePrefix: string): (target: Function) => void {
       const routerController = descriptor?.value;
 
       const path = Reflect.getMetadata(
-        MetadataKeys.path, 
+        MetadataKeys.path,
         target.prototype,
-        key 
+        key
       );
 
       const method: Method = Reflect.getMetadata(
@@ -32,15 +32,17 @@ export function routerConfig(routePrefix: string): (target: Function) => void {
         key
       );
 
-      const middlewares = Reflect.getMetadata(
-        MetadataKeys.middleware,
-        target.prototype,
-        key
-      ) || [];
+      const middlewares =
+        Reflect.getMetadata(MetadataKeys.middleware, target.prototype, key) ||
+        [];
 
       if (path) {
-        router[method](`${routePrefix}${path}`, ...middlewares, routerController);
-      };
+        router[method](
+          `${routePrefix}${path}`,
+          ...middlewares,
+          routerController
+        );
+      }
     }
   };
 }
