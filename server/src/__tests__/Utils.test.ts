@@ -5,13 +5,13 @@ describe('Testing Validator', () => {
     const user1 = {
       username: '',
       email: 'happy@gmail.com',
-      password: '123JuJu7$$123;',
+      password: 'A4GuaN@SmZ',
     };
 
     const user2 = {
       username: 'user1',
       email: 'happy@gmail.com',
-      password: 'asdfd',
+      password: 'A4GuaN@SmZ',
     };
 
     signUpValidator.validate(user1);
