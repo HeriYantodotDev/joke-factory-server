@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { AppRouter } from '../AppRouter';
 import { Method, MetadataKeys } from './constant';
+import { RequestHandler } from 'express';
 
 // prettier-ignore
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -16,12 +17,14 @@ export function routerConfig(routePrefix: string): (target: Function) => void {
         continue;
       }
 
-      const descriptor = Object.getOwnPropertyDescriptor(target.prototype, key);
-
-      const routerController = descriptor?.value;
-
       const path = Reflect.getMetadata(
         MetadataKeys.path,
+        target.prototype,
+        key
+      );
+
+      const controller: RequestHandler = Reflect.getMetadata(
+        MetadataKeys.controller,
         target.prototype,
         key
       );
@@ -40,7 +43,7 @@ export function routerConfig(routePrefix: string): (target: Function) => void {
         router[method](
           `${routePrefix}${path}`,
           ...middlewares,
-          routerController
+          controller
         );
       }
     }
