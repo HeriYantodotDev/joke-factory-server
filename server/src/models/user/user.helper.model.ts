@@ -8,5 +8,6 @@ export interface NewUser {
 
 export async function createUser(newUser: NewUser) {
   const user = await User.create(newUser);
-  return user;
+  const { id, username, email } = user.dataValues;
+  return { id, username, email };
 }
