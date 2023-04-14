@@ -1,2 +1,3 @@
 export * from './routerConfig';
-export * from './Routes';
+export * from './routerBinder';
+export * from './constant';
