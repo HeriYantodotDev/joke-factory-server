@@ -16,15 +16,15 @@ export class Validator {
     this.errorMessageResult = this.errorResult?.details[0].message;
   }
 
-  public get result() {
+  public get result(): Joi.ValidationResult | undefined {
     return this.validationResult;
   }
 
-  public get error() {
+  public get error(): Joi.ValidationError | undefined {
     return this.errorResult;
   }
 
-  public get errorMessage() {
+  public get errorMessage(): string | undefined {
     return this.errorMessageResult;
   }
 }
