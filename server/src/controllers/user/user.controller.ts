@@ -5,5 +5,6 @@ import { UserHelperController } from './user.helper.controller';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class UserController {
   @post('/users', UserHelperController.httpPostSignUp)
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   handleSignUpRequest(): void {}
 }
