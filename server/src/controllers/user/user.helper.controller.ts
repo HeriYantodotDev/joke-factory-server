@@ -5,6 +5,7 @@ import {
   SIGNUP_STATUS,
   ResponseUserCreatedFailed,
   ResponseUserCreatedSuccess,
+  UserDataFromDB,
 } from '../../models';
 import { signUpValidator } from '../../utils';
 import bcrypt from 'bcrypt';
@@ -33,7 +34,9 @@ export class UserHelperController {
       newUserData
     );
 
-    const newUser = await UserHelperModel.createUser(userWithHash);
+    const newUser: UserDataFromDB = await UserHelperModel.createUser(
+      userWithHash
+    );
 
     const responseSuccess: ResponseUserCreatedSuccess = {
       signUpStatus: SIGNUP_STATUS.success,

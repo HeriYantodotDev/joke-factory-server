@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { NewUser } from '../../models';
 
 export class Validator {
   private schema: Joi.ObjectSchema;
@@ -10,7 +11,7 @@ export class Validator {
     this.schema = schema;
   }
 
-  public validate(data: {}): void {
+  public validate(data: NewUser): void {
     this.validationResult = this.schema.validate(data);
     this.errorResult = this.validationResult.error;
     this.errorMessageResult = this.errorResult?.details[0].message;
