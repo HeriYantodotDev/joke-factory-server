@@ -3,11 +3,12 @@ import { AppRouter } from '../AppRouter';
 import { Method, MetadataKeys } from './constant';
 import { RequestHandler } from 'express';
 
-// prettier-ignore
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function routerConfig(routePrefix: string): (target: Function) => void {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  return function (target: Function): void {
+interface RouterConfigFunction {
+  (target: {prototype: object} ): void,
+}
+
+export function routerConfig(routePrefix: string): RouterConfigFunction{
+  return function (target: {prototype: object}) : void {
     const router = AppRouter.router;
 
     const keys = Object.getOwnPropertyNames(target.prototype);
@@ -23,14 +24,14 @@ export function routerConfig(routePrefix: string): (target: Function) => void {
         key
       );
 
-      const controller: RequestHandler = Reflect.getMetadata(
-        MetadataKeys.controller,
+      const method: Method = Reflect.getMetadata(
+        MetadataKeys.method,
         target.prototype,
         key
       );
 
-      const method: Method = Reflect.getMetadata(
-        MetadataKeys.method,
+      const controller: RequestHandler = Reflect.getMetadata(
+        MetadataKeys.controller,
         target.prototype,
         key
       );

@@ -5,17 +5,18 @@ import {
   SIGNUP_STATUS,
   ResponseUserCreatedFailed,
   ResponseUserCreatedSuccess,
-  UserDataFromDB,
+  UserDataFromDB
 } from '../../models';
 import { signUpValidator } from '../../utils';
-import bcrypt from 'bcrypt';
 
 export class UserHelperController {
   public static async httpPostSignUp(
     req: Request,
     res: Response
   ): Promise<void> {
+    
     const newUserData: NewUser = req.body;
+
     //body validation
     signUpValidator.validate(newUserData);
 
@@ -29,37 +30,45 @@ export class UserHelperController {
       return;
     }
     //End of body validation
+    try {
+      if (await UserHelperModel.userExists(newUserData.email)) {
+        throw new Error(`Email: ${newUserData.email} already exists`);
+      }
 
-    const userWithHash = await UserHelperController.createUserWithHash(
-      newUserData
-    );
+      const newUser: UserDataFromDB = await UserHelperModel.createUser(
+        newUserData
+      );
 
-    const newUser: UserDataFromDB = await UserHelperModel.createUser(
-      userWithHash
-    );
+      const responseSuccess: ResponseUserCreatedSuccess = {
+        signUpStatus: SIGNUP_STATUS.success,
+        message: 'User is created',
+        user: newUser,
+      };
 
-    const responseSuccess: ResponseUserCreatedSuccess = {
-      signUpStatus: SIGNUP_STATUS.success,
-      message: 'User is created',
-      user: newUser,
+      res.status(200).send(responseSuccess);
+      return;
+    } catch (err: unknown) {
+      UserHelperController.handleSignUpError(err, res);
+      return;
+    }
+  }
+
+  public static handleSignUpError(err: unknown, res: Response): void {
+    let responseFailed: ResponseUserCreatedFailed;
+    if ( !(err instanceof Error)) {
+      responseFailed = {
+        signUpStatus: SIGNUP_STATUS.failed,
+        message: 'Unknown Error',
+      };
+      res.status(400).send(responseFailed);
+      return;
+    }
+
+    responseFailed = {
+      signUpStatus: SIGNUP_STATUS.failed,
+      message: err.message,
     };
-
-    res.status(200).send(responseSuccess);
-  }
-
-  private static async createUserWithHash(
-    newUserData: NewUser
-  ): Promise<NewUser> {
-    const hash = await UserHelperController.hashPassword(newUserData.password);
-
-    const userWithHash: NewUser = { ...newUserData, password: hash };
-
-    return userWithHash;
-  }
-
-  private static async hashPassword(plainTextPass: string): Promise<string> {
-    const saltRounds = 10;
-    const hash = await bcrypt.hash(plainTextPass, saltRounds);
-    return hash;
+    res.status(400).send(responseFailed);
+    return;
   }
 }

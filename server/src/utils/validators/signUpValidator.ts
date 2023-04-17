@@ -14,7 +14,8 @@ export const signUpSchema = Joi.object({
     .required()
     .messages({
       'string.pattern.base':
-        'Password must contain at least 1 uppercase, 1 lowercase, 1 symbol, and 1 number.',
+        'Password must contain at least 1 uppercase,' +
+        ' 1 lowercase, 1 symbol, and 1 number.',
     }),
 });
 

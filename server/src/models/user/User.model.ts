@@ -3,7 +3,7 @@ import {
   InferAttributes,
   InferCreationAttributes,
   CreationOptional,
-  DataTypes,
+  DataTypes
 } from 'sequelize';
 
 import { sequelize } from '../../config/database';
@@ -39,4 +39,6 @@ User.init(
   }
 );
 
-// (sequelize) Warning: SQLite does not support 'INTEGER' with UNSIGNED or ZEROFILL. Plain 'INTEGER' will be used instead.
+// (sequelize) Warning: SQLite does not support 'INTEGER' 
+// with UNSIGNED 
+// or ZEROFILL. Plain 'INTEGER' will be used instead.
