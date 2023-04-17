@@ -4,6 +4,8 @@ import { AppRouter } from './AppRouter';
 
 import './controllers/index';
 
+import { checkingJSONRequest } from './utils';
+
 export const app = express();
 
 class startupMiddleware {
@@ -14,7 +16,9 @@ class startupMiddleware {
   private static configBodyParser(): void {
     app.use(express.urlencoded({ extended: false }));
     app.use(express.json());
+    app.use(checkingJSONRequest());
   }
+
 }
 
 class Routers {
@@ -29,3 +33,5 @@ class Routers {
 
 startupMiddleware.configMiddleware();
 Routers.setUpAllRouters();
+
+console.log(`Environment : ${process.env.NODE_ENV}`);

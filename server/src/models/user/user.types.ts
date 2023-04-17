@@ -1,13 +1,13 @@
 export interface NewUser {
-  username: string;
-  email: string;
-  password: string;
+  username: string,
+  email: string,
+  password: string,
 }
 
 export interface UserDataFromDB {
-  id: number;
-  username: string;
-  email: string;
+  id: number,
+  username: string,
+  email: string,
 }
 
 export enum SIGNUP_STATUS {
@@ -16,12 +16,12 @@ export enum SIGNUP_STATUS {
 }
 
 export interface ResponseUserCreatedSuccess {
-  signUpStatus: SIGNUP_STATUS.success;
-  message: 'User is created';
-  user: UserDataFromDB;
+  signUpStatus: SIGNUP_STATUS.success,
+  message: 'User is created',
+  user: UserDataFromDB,
 }
 
 export interface ResponseUserCreatedFailed {
-  signUpStatus: SIGNUP_STATUS.failed;
-  message: string;
+  signUpStatus: SIGNUP_STATUS.failed,
+  message: string,
 }

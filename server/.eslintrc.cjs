@@ -3,18 +3,43 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
-    'eslint-config-prettier',
-    'plugin:prettier/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 2021,
     sourceType: 'module',
-    project: './server/tsconfig.eslint.json',
   },
-  plugins: ['@typescript-eslint', 'prettier'],
+  plugins: ['@typescript-eslint'],
   rules: {
     eqeqeq: 'warn',
-    'prettier/prettier': 'off',
+    semi: ['error', 'always'],
+    quotes: ['warn', 'single'],
+    'comma-dangle': [
+      'warn',
+      {
+        arrays: 'always-multiline',
+        objects: 'always-multiline',
+        imports: 'never',
+        exports: 'never',
+        functions: 'never',
+      },
+    ],
+    '@typescript-eslint/member-delimiter-style': ['warn', {
+      'multiline': {
+        'delimiter': 'comma',
+        'requireLast': true,
+      },
+      'singleline': {
+        'delimiter': 'semi',
+        'requireLast': false,
+      },
+    }],
+    'max-len': ['warn', { 'code': 95 }],
   },
+  ignorePatterns: [
+    'node_modules/',
+    'build-client/',
+    'dist/',
+    '*.config.js',
+  ],
 };
