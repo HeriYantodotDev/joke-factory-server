@@ -11,10 +11,17 @@ export class Validator {
     this.schema = schema;
   }
 
-  public validate(data: NewUser): void {
-    this.validationResult = this.schema.validate(data);
-    this.errorResult = this.validationResult.error;
-    this.errorMessageResult = this.errorResult?.details[0].message;
+  public validate(data: NewUser, options?:Joi.ValidationOptions): void {
+    if (options) {
+      this.validationResult = this.schema.validate(data, options);
+    } else {
+      this.validationResult = this.schema.validate(data);
+    }
+
+    if (this.validationResult) {
+      this.errorResult = this.validationResult.error;
+      this.errorMessageResult = this.errorResult?.details[0].message;
+    }
   }
 
   public get result(): Joi.ValidationResult | undefined {

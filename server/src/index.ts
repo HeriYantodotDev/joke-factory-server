@@ -3,7 +3,7 @@ import { sequelize } from './config/database';
 
 const PORT = 3000;
 
-sequelize.sync();
+sequelize.sync({force: true});
 
 app.listen(PORT, () => {
   console.log(

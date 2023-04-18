@@ -1,11 +1,10 @@
-import { signUpValidator } from '../utils';
 import { checkingJSONRequest } from '../utils';
 import { Request, Response, NextFunction } from 'express';
 import { ErrorMessageInvalidJSON } from '../utils';
-
+import { Validator, signUpSchema } from '../utils';
 
 describe('Testing Validator', () => {
-  test('error in Validator is undefined if no error - vise versa', () => {
+  test('Testing Validator using signUpSchema. error is undefined if no error - vise versa', () => {
     const user1 = {
       username: '',
       email: 'happy@gmail.com',
@@ -18,13 +17,15 @@ describe('Testing Validator', () => {
       password: 'A4GuaN@SmZ',
     };
 
-    signUpValidator.validate(user1);
+    const validator = new Validator(signUpSchema);
 
-    expect(signUpValidator.error !== undefined).toBe(true);
+    validator.validate(user1);
 
-    signUpValidator.validate(user2);
+    expect(validator.error).not.toBeUndefined();
 
-    expect(signUpValidator.error === undefined).toBe(true);
+    validator.validate(user2);
+
+    expect(validator.error).toBeUndefined();
   });
 });
 

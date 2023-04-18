@@ -27,8 +27,14 @@ User.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    username: DataTypes.STRING,
-    email: DataTypes.STRING,
+    username: {
+      type: DataTypes.STRING,
+      unique: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      unique: true,
+    },
     password: DataTypes.STRING,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
