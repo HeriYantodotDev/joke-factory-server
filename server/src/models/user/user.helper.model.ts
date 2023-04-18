@@ -29,8 +29,13 @@ export class UserHelperModel {
     return hash;
   }
 
-  public static async userExists(email: string): Promise<boolean> {
+  public static async userExistsByEmail(email: string): Promise<boolean> {
     const user = await User.findOne({ where: { email: email } });
+    return !!user; 
+  }
+
+  public static async userExistsByUserName(username: string): Promise<boolean> {
+    const user = await User.findOne({ where: { username: username } });
     return !!user; 
   }
 }

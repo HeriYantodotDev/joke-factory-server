@@ -7,32 +7,29 @@ import {
   ResponseUserCreatedSuccess,
   UserDataFromDB
 } from '../../models';
-import { signUpValidator } from '../../utils';
+
+class UserExistsError extends Error {
+  public code: string;
+  constructor(message: string, code: string) {
+    super(message);
+    this.code = code;
+  }
+}
 
 export class UserHelperController {
   public static async httpPostSignUp(
     req: Request,
     res: Response
   ): Promise<void> {
-    
     const newUserData: NewUser = req.body;
 
-    //body validation
-    signUpValidator.validate(newUserData);
-
-    if (signUpValidator.error && signUpValidator.errorMessage) {
-      const responseError: ResponseUserCreatedFailed = {
-        signUpStatus: SIGNUP_STATUS.failed,
-        message: signUpValidator.errorMessage,
-      };
-
-      res.status(400).send(responseError);
-      return;
-    }
-    //End of body validation
     try {
-      if (await UserHelperModel.userExists(newUserData.email)) {
-        throw new Error(`Email: ${newUserData.email} already exists`);
+      if (await UserHelperModel.userExistsByUserName(newUserData.username)) {
+        throw new UserExistsError(`Username: ${newUserData.username} already exists`, 'username');
+      }
+
+      if (await UserHelperModel.userExistsByEmail(newUserData.email)) {
+        throw new UserExistsError(`Email: ${newUserData.email} already exists`, 'email');
       }
 
       const newUser: UserDataFromDB = await UserHelperModel.createUser(
@@ -61,6 +58,19 @@ export class UserHelperController {
         message: 'Unknown Error',
       };
       res.status(400).send(responseFailed);
+      return;
+    }
+
+    if (err instanceof UserExistsError) {
+      const field = err.code;
+
+      const validationErrors: Record<string,string> = {};
+      validationErrors[field] = err.message;
+      res.status(400).send({
+        signUpStatus: SIGNUP_STATUS.failed,
+        message: err.message,
+        validationErrors,
+      });
       return;
     }
 

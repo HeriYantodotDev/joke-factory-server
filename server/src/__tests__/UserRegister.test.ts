@@ -11,17 +11,13 @@ import {
 } from '../models';
 import { ErrorMessageInvalidJSON } from '../utils';
 
-const bodyWithoutUserName: NewUser = {
-  username: '',
-  email: 'user1@gmail.com',
-  password: 'A4GuaN@SmZ',
-};
 
-const bodyWithUserNameNull = {
-  username: null,
-  email: 'user1@gmail.com',
-  password: 'A4GuaN@SmZ',
-};
+interface UserModified {
+  [key: string]: string | null,
+  username: string,
+  email: string,
+  password: string,
+}
 
 const bodyValid: NewUser = {
   username: 'user1',
@@ -32,23 +28,27 @@ const userBodyValid = 'user1';
 const emailBodyValid = 'user1@gmail.com';
 const passBodyValid = 'A4GuaN@SmZ';
 
-const bodyWithInvalidPass: NewUser = {
-  username: 'useruser1',
+const bodyValidSameEmail: NewUser = {
+  username: 'userFree',
   email: 'user1@gmail.com',
-  password: 'password',
+  password: 'A4GuaN@SmZ',
 };
 
-const bodyWithInvalidPass2:NewUser = {
-  username: 'useruser1',
-  email: 'user1@gmail.com',
-  password: 'P@assword',
-};
-
-const signUpFailedPasswordError = {
-  signUpStatus: 'failed',
+const signUpFailedPasswordError: ResponseUserCreatedFailed = {
+  signUpStatus: SIGNUP_STATUS.failed,
   message:
     'Password must contain at least 1 uppercase, ' + 
     '1 lowercase, 1 symbol, and 1 number.',
+};
+
+const signUpFailedPasswordLess8: ResponseUserCreatedFailed = {
+  signUpStatus: SIGNUP_STATUS.failed,
+  message: '"password" length must be at least 8 characters long',
+};
+
+const signUpFailedInvalidEmail: ResponseUserCreatedFailed = {
+  signUpStatus: SIGNUP_STATUS.failed,
+  message: '"email" must be a valid email',
 };
 
 const signUpStatusOnlyFailed = {
@@ -67,15 +67,24 @@ function generateResponseSuccessBodyValid(savedUser: User): ResponseUserCreatedS
   };
 }
 
-function generateResponseFailedUserExist(email: string): ResponseUserCreatedFailed {
+function generateResponseFailedUserExist(user: string): ResponseUserCreatedFailed {
+  return {
+    signUpStatus: SIGNUP_STATUS.failed,
+    message: `Username: ${user} already exists`,
+    validationErrors: {username: `Username: ${user} already exists`},
+  };
+}
+
+function generateResponseFailedEmailExist(email: string): ResponseUserCreatedFailed {
   return {
     signUpStatus: SIGNUP_STATUS.failed,
     message: `Email: ${email} already exists`,
+    validationErrors: {email: `Email: ${email} already exists`},
   };
 }
 
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function postUser(user: any) {  
+async function postUser(user: any = bodyValid) {  
   return await request(app).post('/api/1.0/users').send(user);
 }
 
@@ -93,7 +102,7 @@ const errorMessageInvalidJson1: ErrorMessageInvalidJSON = {
 
 describe('User Registration API', () => {
   beforeAll(() => {
-    return sequelize.sync();
+    return sequelize.sync({force:true});
   });
 
   beforeEach(() => {
@@ -110,7 +119,7 @@ describe('User Registration API', () => {
 
   test('Returns 200 + success message + save to database, when the sign up request is valid', 
     async () => {
-      const response = await postUser(bodyValid);
+      const response = await postUser();
       const userList = await User.findAll();
       const savedUser = userList[0];
 
@@ -126,39 +135,97 @@ describe('User Registration API', () => {
   });
 
   test('hashes the password in the database', async () => {
-    await postUser(bodyValid);
+    await postUser();
     const userList = await User.findAll();
     const savedUser = userList[0];
 
     expect(savedUser.password).not.toBe(passBodyValid);
   });
 
-  test('Returns 400 & error message, when the sign up form is invalid', async () => {
-    const response = await postUser(bodyWithoutUserName);
+  test.each`
+    field           | errorMessage
+    ${'username'}   | ${'"username" is not allowed to be empty'}
+    ${'email'}      | ${'"email" is not allowed to be empty'}
+    ${'password'}   | ${'"password" is not allowed to be empty'}
+  `('When $field is empty, %errorMessage is received', async ({field, errorMessage}) => {
+    const userModified: NewUser = {
+      username: 'user1',
+      email: 'user1@gmail.com',
+      password: 'A4GuaN@SmZ',
+    };
+    userModified[field] = '';
+    const response = await postUser(userModified);
 
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject(signUpStatusOnlyFailed);
-    expect(response.body.message !== undefined).toBe(true);
+    expect(response.body.message).not.toBeUndefined;
+    expect(response.body.validationErrors[field]).toBe(errorMessage);
   });
 
-  test('Returns 400 & error message, when the user name is null', async () => {
-    const response = await postUser(bodyWithUserNameNull);
+  test.each`
+    field           | expectedMessage
+    ${'username'}   | ${'"username" must be a string'}
+    ${'password'}   | ${'"password" must be a string'}
+    ${'email'}      | ${'"email" must be a string'}
+  `('When $field is null, %expectedMessage is received', async ({field, expectedMessage}) => {
+    const userModified: UserModified= {
+      username: 'user1',
+      email: 'user1@gmail.com',
+      password: 'A4GuaN@SmZ',
+    };
+    userModified[field] = null;
+    const response = await postUser(userModified);
 
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject(signUpStatusOnlyFailed);
-    expect(response.body.message !== undefined).toBe(true);
+    expect(response.body.message).not.toBeUndefined;
+    expect(response.body.validationErrors[field]).toBe(expectedMessage);
   });
 
-  test('Returns error message when the password is invalid', async () => {
-    const response = await postUser(bodyWithInvalidPass);
+  test.each`
+    password            | expected
+    ${'password'}       | ${signUpFailedPasswordError}
+    ${'password@123'}   | ${signUpFailedPasswordError}
+    ${'823472734'}      | ${signUpFailedPasswordError}
+    ${'P4S5WORDS'}      | ${signUpFailedPasswordError}
+    ${'P1@a'}           | ${signUpFailedPasswordLess8}
+    ${'%^&*('}          | ${signUpFailedPasswordLess8}
+    ${'Su&^;I4'}        | ${signUpFailedPasswordLess8}
+  `('This PASSWORD: $password is invalid', async ({password, expected}) => {
+    const userModified: UserModified= {
+      username: 'user1',
+      email: 'user1@gmail.com',
+      password: password,
+    };
+
+    const response = await postUser(userModified);
 
     expect(response.status).toBe(400);
-    expect(response.body).toStrictEqual(signUpFailedPasswordError);
+    expect(response.body).toMatchObject(expected);
+    expect(response.body.message).not.toBeUndefined;
+    expect(response.body.validationErrors.password).toBe(expected.message);
+  });
 
-    const response2 = await postUser(bodyWithInvalidPass2);
-
-    expect(response2.status).toBe(400);
-    expect(response.body).toStrictEqual(signUpFailedPasswordError);
+  test.each([
+    ['email'],
+    ['email@'],
+    ['@yahoo'],
+    ['email@yahoo'],
+    ['email@yahoo..com'],
+    ['email@@yahoo..com'],
+    ['email@gmailcom'],
+    ['emailgmailcom'],
+  ])('This email: "%s" is invalid', async (email:string) => {
+    const userModified: UserModified = {
+      username: 'user1',
+      email: email,
+      password: 'PpaSwo#rD9d',
+    };
+    const response = await postUser(userModified);
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject(signUpFailedInvalidEmail);
+    expect(response.body.message).not.toBeUndefined;
+    expect(response.body.validationErrors.email).toBe(signUpFailedInvalidEmail.message);
   });
 
   test('calls handleSignUpError when createUser throws error', async () => {
@@ -166,20 +233,34 @@ describe('User Registration API', () => {
       throw new Error('Some Errors!!!!!');
     });
 
-    const response = await postUser(bodyValid);
+    const response = await postUser();
     expect(response.status).toBe(400);
-    expect(response.body).toStrictEqual({
+    expect(response.body).toMatchObject({
       signUpStatus: 'failed',
       message: 'Some Errors!!!!!',
     });
   });
 
-  test('Return 400 & error message when user with email exists', async () => {
-    await postUser(bodyValid);
-    const response = await postUser(bodyValid);
+  test('Return 400 & error message when user name exists', async () => {
+    await postUser();
+    const response = await postUser();
 
     expect(response.status).toBe(400);
-    expect(response.body).toStrictEqual(generateResponseFailedUserExist(emailBodyValid));
+
+    const responseBody = generateResponseFailedUserExist(userBodyValid);
+    expect(response.body).toMatchObject(responseBody);
+    expect(response.body.validationErrors.username).toBe(responseBody.validationErrors?.username);
+  });
+
+  test('Return 400 & error message when email exists', async () => {
+    await postUser(bodyValid);
+    const response = await postUser(bodyValidSameEmail);
+
+    expect(response.status).toBe(400);
+
+    const responseBody = generateResponseFailedEmailExist(bodyValidSameEmail.email);
+    expect(response.body).toMatchObject(responseBody);
+    expect(response.body.validationErrors.email).toBe(responseBody.validationErrors?.email);
   });
 });
 
@@ -196,10 +277,10 @@ describe('UserHelperController', () => {
       UserHelperController.handleSignUpError(error, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
         signUpStatus: 'failed',
         message: 'Database doesn\'t exist',
-      });
+      }));
     });
 
     test('should return a 400 response with a failed status and' +
@@ -213,10 +294,10 @@ describe('UserHelperController', () => {
       UserHelperController.handleSignUpError(error, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith({
+      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
         signUpStatus: 'failed',
         message: 'Unknown Error',
-      });
+      }));
     });
   });
 });

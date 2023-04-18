@@ -18,7 +18,6 @@ class startupMiddleware {
     app.use(express.json());
     app.use(checkingJSONRequest());
   }
-
 }
 
 class Routers {

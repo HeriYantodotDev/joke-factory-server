@@ -34,7 +34,7 @@ module.exports = {
         'requireLast': false,
       },
     }],
-    'max-len': ['warn', { 'code': 95 }],
+    'max-len': ['warn', { 'code': 115 }],
   },
   ignorePatterns: [
     'node_modules/',

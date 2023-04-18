@@ -1,4 +1,5 @@
 export interface NewUser {
+  [key: string]: string,
   username: string,
   email: string,
   password: string,
@@ -15,13 +16,22 @@ export enum SIGNUP_STATUS {
   success = 'success',
 }
 
+//In the frontend here's how it looks :
+export interface ResponseUserCreatedFailedFrontEnd {
+  validationErrors?: {
+    username?: string,
+    email?: string,
+    password?: string,
+  },
+}
+
 export interface ResponseUserCreatedSuccess {
   signUpStatus: SIGNUP_STATUS.success,
   message: 'User is created',
   user: UserDataFromDB,
 }
 
-export interface ResponseUserCreatedFailed {
+export interface ResponseUserCreatedFailed extends ResponseUserCreatedFailedFrontEnd {
   signUpStatus: SIGNUP_STATUS.failed,
   message: string,
 }
