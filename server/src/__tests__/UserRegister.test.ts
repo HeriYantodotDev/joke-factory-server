@@ -3,20 +3,16 @@ import { app } from '../app';
 import { User, NewUser, UserHelperModel } from '../models';
 import { sequelize } from '../config/database';
 import { UserHelperController } from '../controllers';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { 
   SIGNUP_STATUS, 
-  ResponseUserCreatedSuccess, 
-  ResponseUserCreatedFailed 
+  ResponseUserCreatedSuccess
+  // ResponseUserCreatedFailed 
 } from '../models';
 import { ErrorMessageInvalidJSON } from '../utils';
 
-
-interface UserModified {
-  [key: string]: string | null,
-  username: string,
-  email: string,
-  password: string,
+interface optionPostUser {
+  language?: string,
 }
 
 const bodyValid: NewUser = {
@@ -34,31 +30,13 @@ const bodyValidSameEmail: NewUser = {
   password: 'A4GuaN@SmZ',
 };
 
-const signUpFailedPasswordError: ResponseUserCreatedFailed = {
-  signUpStatus: SIGNUP_STATUS.failed,
-  message:
-    'Password must contain at least 1 uppercase, ' + 
-    '1 lowercase, 1 symbol, and 1 number.',
-};
-
-const signUpFailedPasswordLess8: ResponseUserCreatedFailed = {
-  signUpStatus: SIGNUP_STATUS.failed,
-  message: '"password" length must be at least 8 characters long',
-};
-
-const signUpFailedInvalidEmail: ResponseUserCreatedFailed = {
-  signUpStatus: SIGNUP_STATUS.failed,
-  message: '"email" must be a valid email',
-};
-
-const signUpStatusOnlyFailed = {
-  signUpStatus: 'failed',
-};
-
-function generateResponseSuccessBodyValid(savedUser: User): ResponseUserCreatedSuccess {
+function generateResponseSuccessBodyValid(
+  savedUser: User,
+  successMessage: string
+): ResponseUserCreatedSuccess {
   return {
     signUpStatus: SIGNUP_STATUS.success,
-    message: 'User is created',
+    message: successMessage,
     user: {
       id: savedUser.id,
       username: savedUser.username,
@@ -67,25 +45,16 @@ function generateResponseSuccessBodyValid(savedUser: User): ResponseUserCreatedS
   };
 }
 
-function generateResponseFailedUserExist(user: string): ResponseUserCreatedFailed {
-  return {
-    signUpStatus: SIGNUP_STATUS.failed,
-    message: `Username: ${user} already exists`,
-    validationErrors: {username: `Username: ${user} already exists`},
-  };
-}
-
-function generateResponseFailedEmailExist(email: string): ResponseUserCreatedFailed {
-  return {
-    signUpStatus: SIGNUP_STATUS.failed,
-    message: `Email: ${email} already exists`,
-    validationErrors: {email: `Email: ${email} already exists`},
-  };
-}
-
 //eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function postUser(user: any = bodyValid) {  
-  return await request(app).post('/api/1.0/users').send(user);
+async function postUser(user: any = bodyValid, option: optionPostUser = {}) {
+
+  const agent = request(app).post('/api/1.0/users');
+
+  if (option.language){
+    agent.set('Accept-Language', option.language);
+  }
+
+  return await agent.send(user);
 }
 
 async function postInvalidJson() {
@@ -100,7 +69,34 @@ const errorMessageInvalidJson1: ErrorMessageInvalidJSON = {
   message: 'Unexpected token i in JSON at position 0',
 };
 
+function signUpFailedGenerator(field: string, errorMessage: string) {
+  const objectResponse = {
+    signUpStatus: SIGNUP_STATUS.failed,
+    message: errorMessage,
+    validationErrors: {
+      [field]: errorMessage,
+    },
+  };
+  return objectResponse;
+}
+
+function generateErrorUserExist(field: string,  value: string, errorUserExist: string): string {
+  return `${field}: ${value} ${errorUserExist}`;
+}
+
 describe('User Registration API', () => {
+  const errorPassword1 = 'Password must contain at least 1 uppercase, 1 lowercase, 1 symbol, and 1 number';
+  const errorPassword2 = '"password" length must be at least 8 characters long';
+  const errorUsernameEmpty = '"username" is not allowed to be empty';
+  const errorEmailEmpty = '"email" is not allowed to be empty';
+  const errorPasswordEmpty = '"password" is not allowed to be empty';
+  const errorUsernameNull = '"username" must be a string';
+  const errorEmailNull = '"email" must be a string';
+  const errorPasswordNull = '"password" must be a string';
+  const errorEmailInvalid = '"email" must be a valid email';
+  const errorUserExist = 'already exists';
+  const userCreated = 'User is created';
+
   beforeAll(() => {
     return sequelize.sync({force:true});
   });
@@ -109,29 +105,12 @@ describe('User Registration API', () => {
     jest.restoreAllMocks();
     return User.destroy({ truncate: true });
   });
-
+  
   test('Returns 400 & error Message, when JSON Request is invalid', async () => {
     const response = await postInvalidJson();
 
     expect(response.status).toBe(400);
     expect(response.body).toStrictEqual(errorMessageInvalidJson1);
-  });
-
-  test('Returns 200 + success message + save to database, when the sign up request is valid', 
-    async () => {
-      const response = await postUser();
-      const userList = await User.findAll();
-      const savedUser = userList[0];
-
-      expect(response.status).toBe(200);
-
-      expect(response.body).toStrictEqual(
-        generateResponseSuccessBodyValid(savedUser)
-      );
-
-      expect(userList.length).toBe(1);
-      expect(savedUser.username).toBe(userBodyValid);
-      expect(savedUser.email).toBe(emailBodyValid);
   });
 
   test('hashes the password in the database', async () => {
@@ -140,92 +119,6 @@ describe('User Registration API', () => {
     const savedUser = userList[0];
 
     expect(savedUser.password).not.toBe(passBodyValid);
-  });
-
-  test.each`
-    field           | errorMessage
-    ${'username'}   | ${'"username" is not allowed to be empty'}
-    ${'email'}      | ${'"email" is not allowed to be empty'}
-    ${'password'}   | ${'"password" is not allowed to be empty'}
-  `('When $field is empty, %errorMessage is received', async ({field, errorMessage}) => {
-    const userModified: NewUser = {
-      username: 'user1',
-      email: 'user1@gmail.com',
-      password: 'A4GuaN@SmZ',
-    };
-    userModified[field] = '';
-    const response = await postUser(userModified);
-
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject(signUpStatusOnlyFailed);
-    expect(response.body.message).not.toBeUndefined;
-    expect(response.body.validationErrors[field]).toBe(errorMessage);
-  });
-
-  test.each`
-    field           | expectedMessage
-    ${'username'}   | ${'"username" must be a string'}
-    ${'password'}   | ${'"password" must be a string'}
-    ${'email'}      | ${'"email" must be a string'}
-  `('When $field is null, %expectedMessage is received', async ({field, expectedMessage}) => {
-    const userModified: UserModified= {
-      username: 'user1',
-      email: 'user1@gmail.com',
-      password: 'A4GuaN@SmZ',
-    };
-    userModified[field] = null;
-    const response = await postUser(userModified);
-
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject(signUpStatusOnlyFailed);
-    expect(response.body.message).not.toBeUndefined;
-    expect(response.body.validationErrors[field]).toBe(expectedMessage);
-  });
-
-  test.each`
-    password            | expected
-    ${'password'}       | ${signUpFailedPasswordError}
-    ${'password@123'}   | ${signUpFailedPasswordError}
-    ${'823472734'}      | ${signUpFailedPasswordError}
-    ${'P4S5WORDS'}      | ${signUpFailedPasswordError}
-    ${'P1@a'}           | ${signUpFailedPasswordLess8}
-    ${'%^&*('}          | ${signUpFailedPasswordLess8}
-    ${'Su&^;I4'}        | ${signUpFailedPasswordLess8}
-  `('This PASSWORD: $password is invalid', async ({password, expected}) => {
-    const userModified: UserModified= {
-      username: 'user1',
-      email: 'user1@gmail.com',
-      password: password,
-    };
-
-    const response = await postUser(userModified);
-
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject(expected);
-    expect(response.body.message).not.toBeUndefined;
-    expect(response.body.validationErrors.password).toBe(expected.message);
-  });
-
-  test.each([
-    ['email'],
-    ['email@'],
-    ['@yahoo'],
-    ['email@yahoo'],
-    ['email@yahoo..com'],
-    ['email@@yahoo..com'],
-    ['email@gmailcom'],
-    ['emailgmailcom'],
-  ])('This email: "%s" is invalid', async (email:string) => {
-    const userModified: UserModified = {
-      username: 'user1',
-      email: email,
-      password: 'PpaSwo#rD9d',
-    };
-    const response = await postUser(userModified);
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject(signUpFailedInvalidEmail);
-    expect(response.body.message).not.toBeUndefined;
-    expect(response.body.validationErrors.email).toBe(signUpFailedInvalidEmail.message);
   });
 
   test('calls handleSignUpError when createUser throws error', async () => {
@@ -240,27 +133,176 @@ describe('User Registration API', () => {
       message: 'Some Errors!!!!!',
     });
   });
+  //Internationalization1
+  test(`Returns 200 + ${userCreated} + save to database, when the sign up request is valid`, 
+    async () => {
+      const response = await postUser();
+      const userList = await User.findAll();
+      const savedUser = userList[0];
 
-  test('Return 400 & error message when user name exists', async () => {
-    await postUser();
-    const response = await postUser();
+      expect(response.status).toBe(200);
+
+      expect(response.body).toStrictEqual(
+        generateResponseSuccessBodyValid(savedUser, userCreated)
+      );
+
+      expect(userList.length).toBe(1);
+      expect(savedUser.username).toBe(userBodyValid);
+      expect(savedUser.email).toBe(emailBodyValid);
+  });
+  //Internationalization2
+  test.each`
+    field             | value                     | errorMessage
+    ${'username'}     | ${''}                     | ${errorUsernameEmpty}
+    ${'email'}        | ${''}                     | ${errorEmailEmpty}
+    ${'password'}     | ${''}                     | ${errorPasswordEmpty}
+    ${'username'}     | ${null}                   | ${errorUsernameNull}
+    ${'email'}        | ${null}                   | ${errorEmailNull}
+    ${'password'}     | ${null}                   | ${errorPasswordNull}
+    ${'password'}     | ${'password'}             | ${errorPassword1}
+    ${'password'}     | ${'password@123'}         | ${errorPassword1}
+    ${'password'}     | ${'823472734'}            | ${errorPassword1}
+    ${'password'}     | ${'P4S5WORDS'}            | ${errorPassword1}
+    ${'password'}     | ${'P1@a'}                 | ${errorPassword2}
+    ${'password'}     | ${'%^&*('}                | ${errorPassword2}
+    ${'password'}     | ${'Su&^;I4'}              | ${errorPassword2}
+    ${'email'}        | ${'email'}                | ${errorEmailInvalid}
+    ${'email'}        | ${'email@'}               | ${errorEmailInvalid}
+    ${'email'}        | ${'@yahoo'}               | ${errorEmailInvalid}
+    ${'email'}        | ${'email@yahoo'}          | ${errorEmailInvalid}
+    ${'email'}        | ${'email@yahoo..com'}     | ${errorEmailInvalid}
+    ${'email'}        | ${'email@@yahoo.com'}     | ${errorEmailInvalid}
+    ${'email'}        | ${'email@gmailcom'}       | ${errorEmailInvalid}
+    ${'email'}        | ${'emailgmailcom'}        | ${errorEmailInvalid}
+  `('If $field is = "$value", $errorMessage is received', async({field, value, errorMessage}) => {
+    const expectedResponse = signUpFailedGenerator(field, errorMessage);
+    const userModified: NewUser = {
+      username: 'user1',
+      email: 'user1@gmail.com',
+      password: 'A4GuaN@SmZ',
+    };
+    userModified[field] = value;
+    const response = await postUser(userModified);
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject(expectedResponse);
+    expect(response.body.message).not.toBeUndefined;
+    expect(response.body.validationErrors[field]).toBe(expectedResponse.validationErrors[field]);
+  });
+  //Internationalization3
+  test.each`
+    duplicatefield      | postBody
+    ${'username'}       | ${bodyValid}
+    ${'email'}          | ${bodyValidSameEmail}
+  `('If $duplicatefield exist, returns 400 & error message', async({duplicatefield, postBody}) => {
+
+    await postUser(bodyValid);
+    const response = await postUser(postBody);
+
+    const errorMessage = generateErrorUserExist(duplicatefield, postBody[duplicatefield], errorUserExist);
+    const expectedResponse = signUpFailedGenerator(duplicatefield, errorMessage);
 
     expect(response.status).toBe(400);
 
-    const responseBody = generateResponseFailedUserExist(userBodyValid);
-    expect(response.body).toMatchObject(responseBody);
-    expect(response.body.validationErrors.username).toBe(responseBody.validationErrors?.username);
+    expect(response.body).toMatchObject(expectedResponse);
+    expect(response.body.validationErrors[duplicatefield]).toBe(expectedResponse.validationErrors[duplicatefield]);
   });
 
-  test('Return 400 & error message when email exists', async () => {
+
+  //TODO: Test for several field errors. It should return object with validationErros properties for all field. 
+});
+
+describe('Internationalization', () => {
+  const errorPassword1 = 'Kata sandi harus mengandung 1 huruf besar, 1 huruf kecil, 1 simbol, & 1 angka';
+  const errorPassword2 = 'panjang "kata sandi" minimal harus 8 karakter';
+  const errorUsernameEmpty = '"nama pengguna" tidak boleh kosong';
+  const errorEmailEmpty = '"email" tidak boleh kosong';
+  const errorPasswordEmpty = '"kata sandi" tidak boleh kosong';
+  const errorUsernameNull = '"nama pengguna" harus berupa string';
+  const errorEmailNull = '"nama pengguna" harus berupa string';
+  const errorPasswordNull = '"kata sandi" harus berupa string';
+  const errorEmailInvalid = '"email" harus berupa email yang valid';
+  const errorUserExist = 'sudah terdaftar';
+  const userCreated = 'Akun pengguna telah dibuat';
+  beforeAll(() => {
+    return sequelize.sync({force:true});
+  });
+
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    return User.destroy({ truncate: true });
+  });
+  //Internationalization1
+  test(`Returns 200 + ${userCreated} + save to database, when the sign up request is valid`, 
+  async () => {
+    const response = await postUser(bodyValid, {language:'id'});
+    const userList = await User.findAll();
+    const savedUser = userList[0];
+
+    expect(response.status).toBe(200);
+
+    expect(response.body).toStrictEqual(
+      generateResponseSuccessBodyValid(savedUser, userCreated)
+    );
+
+    expect(userList.length).toBe(1);
+    expect(savedUser.username).toBe(userBodyValid);
+    expect(savedUser.email).toBe(emailBodyValid);
+  });
+  //Internationalization2
+  test.each`
+    field             | value                     | errorMessage
+    ${'username'}     | ${''}                     | ${errorUsernameEmpty}
+    ${'email'}        | ${''}                     | ${errorEmailEmpty}
+    ${'password'}     | ${''}                     | ${errorPasswordEmpty}
+    ${'username'}     | ${null}                   | ${errorUsernameNull}
+    ${'email'}        | ${null}                   | ${errorEmailNull}
+    ${'password'}     | ${null}                   | ${errorPasswordNull}
+    ${'password'}     | ${'password'}             | ${errorPassword1}
+    ${'password'}     | ${'password@123'}         | ${errorPassword1}
+    ${'password'}     | ${'823472734'}            | ${errorPassword1}
+    ${'password'}     | ${'P4S5WORDS'}            | ${errorPassword1}
+    ${'password'}     | ${'P1@a'}                 | ${errorPassword2}
+    ${'password'}     | ${'%^&*('}                | ${errorPassword2}
+    ${'password'}     | ${'Su&^;I4'}              | ${errorPassword2}
+    ${'email'}        | ${'email'}                | ${errorEmailInvalid}
+    ${'email'}        | ${'email@'}               | ${errorEmailInvalid}
+    ${'email'}        | ${'@yahoo'}               | ${errorEmailInvalid}
+    ${'email'}        | ${'email@yahoo'}          | ${errorEmailInvalid}
+    ${'email'}        | ${'email@yahoo..com'}     | ${errorEmailInvalid}
+    ${'email'}        | ${'email@@yahoo.com'}     | ${errorEmailInvalid}
+    ${'email'}        | ${'email@gmailcom'}       | ${errorEmailInvalid}
+    ${'email'}        | ${'emailgmailcom'}        | ${errorEmailInvalid}
+  `('If $field is = "$value", $errorMessage is received', async({field, value, errorMessage}) => {
+    const expectedResponse = signUpFailedGenerator(field, errorMessage);
+    const userModified: NewUser = {
+      username: 'user1',
+      email: 'user1@gmail.com',
+      password: 'A4GuaN@SmZ',
+    };
+    userModified[field] = value;
+    const response = await postUser(userModified, {language: 'id'});
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject(expectedResponse);
+    expect(response.body.message).not.toBeUndefined;
+    expect(response.body.validationErrors[field]).toBe(expectedResponse.validationErrors[field]);
+  });
+  //Internationalization3
+  test.each`
+    duplicatefield      | postBody
+    ${'username'}       | ${bodyValid}
+    ${'email'}          | ${bodyValidSameEmail}
+  `('If $duplicatefield exist, returns 400 & error message', async({duplicatefield, postBody}) => {
+
     await postUser(bodyValid);
-    const response = await postUser(bodyValidSameEmail);
+    const response = await postUser(postBody, {language: 'id'});
+
+    const errorMessage = generateErrorUserExist(duplicatefield, postBody[duplicatefield], errorUserExist);
+    const expectedResponse = signUpFailedGenerator(duplicatefield, errorMessage);
 
     expect(response.status).toBe(400);
 
-    const responseBody = generateResponseFailedEmailExist(bodyValidSameEmail.email);
-    expect(response.body).toMatchObject(responseBody);
-    expect(response.body.validationErrors.email).toBe(responseBody.validationErrors?.email);
+    expect(response.body).toMatchObject(expectedResponse);
+    expect(response.body.validationErrors[duplicatefield]).toBe(expectedResponse.validationErrors[duplicatefield]);
   });
 });
 
@@ -274,7 +316,26 @@ describe('UserHelperController', () => {
         send: jest.fn(),
       } as unknown as Response;
 
-      UserHelperController.handleSignUpError(error, res);
+      const req: Request = {
+        body: {
+          // mock request body
+        },
+        headers: {
+          // mock request headers
+        },
+        params: {
+          // mock request params
+        },
+        query: {
+          // mock query parameters
+        },
+        get: jest.fn((header) => {
+          // mock get header function
+          return req.headers[header];
+        }),
+      } as unknown as Request;
+
+      UserHelperController.handleSignUpError(error, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
@@ -291,7 +352,22 @@ describe('UserHelperController', () => {
         send: jest.fn(),
       } as unknown as Response;
 
-      UserHelperController.handleSignUpError(error, res);
+      const req: Request = {
+        body: {// mock request body
+        },
+        headers: {// mock request headers
+        },
+        params: {// mock request params
+        },
+        query: {// mock query parameters
+        },
+        get: jest.fn((header) => {
+          // mock get header function
+          return req.headers[header];
+        }),
+      } as unknown as Request;
+      
+      UserHelperController.handleSignUpError(error, req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
@@ -301,3 +377,5 @@ describe('UserHelperController', () => {
     });
   });
 });
+
+

@@ -25,11 +25,13 @@ export class UserHelperController {
 
     try {
       if (await UserHelperModel.userExistsByUserName(newUserData.username)) {
-        throw new UserExistsError(`Username: ${newUserData.username} already exists`, 'username');
+        throw new UserExistsError('errorUserExist', 'username');
+        // throw new UserExistsError(`username: ${newUserData.username} already exists`, 'username');
       }
 
       if (await UserHelperModel.userExistsByEmail(newUserData.email)) {
-        throw new UserExistsError(`Email: ${newUserData.email} already exists`, 'email');
+        throw new UserExistsError('errorUserExist', 'email');
+        // throw new UserExistsError(`email: ${newUserData.email} already exists`, 'email');
       }
 
       const newUser: UserDataFromDB = await UserHelperModel.createUser(
@@ -38,19 +40,19 @@ export class UserHelperController {
 
       const responseSuccess: ResponseUserCreatedSuccess = {
         signUpStatus: SIGNUP_STATUS.success,
-        message: 'User is created',
+        message: req.t('userCreated'),
         user: newUser,
       };
 
       res.status(200).send(responseSuccess);
       return;
     } catch (err: unknown) {
-      UserHelperController.handleSignUpError(err, res);
+      UserHelperController.handleSignUpError(err, req, res);
       return;
     }
   }
 
-  public static handleSignUpError(err: unknown, res: Response): void {
+  public static handleSignUpError(err: unknown, req: Request, res: Response): void {
     let responseFailed: ResponseUserCreatedFailed;
     if ( !(err instanceof Error)) {
       responseFailed = {
@@ -64,11 +66,15 @@ export class UserHelperController {
     if (err instanceof UserExistsError) {
       const field = err.code;
 
+      const message = req.t(err.message);
+
+      const errorMess: string = UserHelperController.generateErrorUserExist(field, req.body[field], message);
+
       const validationErrors: Record<string,string> = {};
-      validationErrors[field] = err.message;
+      validationErrors[field] = errorMess;
       res.status(400).send({
         signUpStatus: SIGNUP_STATUS.failed,
-        message: err.message,
+        message: errorMess,
         validationErrors,
       });
       return;
@@ -80,5 +86,9 @@ export class UserHelperController {
     };
     res.status(400).send(responseFailed);
     return;
+  }
+
+  public static generateErrorUserExist(field: string,  value: string, errorType: string): string {
+    return `${field}: ${value} ${errorType}`;
   }
 }

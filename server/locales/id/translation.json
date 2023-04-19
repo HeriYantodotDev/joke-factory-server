@@ -1,0 +1,13 @@
+{
+  "errorPassword1": "Kata sandi harus mengandung 1 huruf besar, 1 huruf kecil, 1 simbol, & 1 angka",
+  "errorPassword2": "panjang \"kata sandi\" minimal harus 8 karakter",
+  "errorUsernameEmpty": "\"nama pengguna\" tidak boleh kosong",
+  "errorEmailEmpty": "\"email\" tidak boleh kosong",
+  "errorPasswordEmpty": "\"kata sandi\" tidak boleh kosong",
+  "errorUsernameNull": "\"nama pengguna\" harus berupa string",
+  "errorEmailNull": "\"nama pengguna\" harus berupa string",
+  "errorPasswordNull": "\"kata sandi\" harus berupa string",
+  "errorEmailInvalid": "\"email\" harus berupa email yang valid",
+  "errorUserExist": "sudah terdaftar",
+  "userCreated": "Akun pengguna telah dibuat"
+}
