@@ -3,7 +3,7 @@ import Joi from 'joi';
 import { Validator } from '../validators/Validator';
 
 export interface ValidationResGenerator{
-  (validator: Validator): object | undefined,
+  (validator: Validator, req: Request): object | undefined,
 }
 
 export function bodyValidatorMW(
@@ -21,7 +21,7 @@ export function bodyValidatorMW(
       validator.validate(req.body);
     }
 
-    const validationError = resGenerator(validator);
+    const validationError = resGenerator(validator, req);
 
     if (validationError) {
       res.status(400).send(validationError);

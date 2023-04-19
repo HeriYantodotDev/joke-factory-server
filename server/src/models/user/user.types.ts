@@ -27,7 +27,7 @@ export interface ResponseUserCreatedFailedFrontEnd {
 
 export interface ResponseUserCreatedSuccess {
   signUpStatus: SIGNUP_STATUS.success,
-  message: 'User is created',
+  message: string,
   user: UserDataFromDB,
 }
 

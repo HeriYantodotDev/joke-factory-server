@@ -1,10 +1,28 @@
 import Joi from 'joi';
 import { Validator } from './Validator';
-import { ResponseUserCreatedFailed, SIGNUP_STATUS, UserHelperModel } from '../../models';
+import { ResponseUserCreatedFailed, SIGNUP_STATUS } from '../../models';
+import { Request } from 'express';
 
 export const signUpSchema = Joi.object({
-  username: Joi.string().alphanum().min(3).max(30).required(),
-  email: Joi.string().email().required(),
+  username: Joi.string()
+    .alphanum()
+    .min(3)
+    .max(30)
+    .required()
+    .messages({
+      'string.empty': 'errorUsernameEmpty',
+      'string.base': 'errorUsernameNull',
+    })
+    ,
+  email: Joi.string()
+    .email()
+    .required()
+    .messages({
+      'string.empty': 'errorEmailEmpty',
+      'string.base': 'errorEmailNull',
+      'string.email': 'errorEmailInvalid',
+    })
+    ,
   password: Joi.string()
     .min(8)
     .pattern(
@@ -14,14 +32,16 @@ export const signUpSchema = Joi.object({
     )
     .required()
     .messages({
-      'string.pattern.base':
-        'Password must contain at least 1 uppercase,' +
-        ' 1 lowercase, 1 symbol, and 1 number.',
+      'string.base': 'errorPasswordNull',
+      'string.pattern.base': 'errorPassword1',
+      'string.empty': 'errorPasswordEmpty',
+      'string.min': 'errorPassword2',
     }),
 });
 
 export function signUpValidationErrorGenerator(
-  signUpValidator: Validator
+  signUpValidator: Validator,
+  req: Request
 ): object | undefined {
   const validationErrors: Record<string, string> = {};
 
@@ -30,7 +50,7 @@ export function signUpValidationErrorGenerator(
   if ( signUpValidator.error && signUpValidator.errorMessage ) {
     signUpValidator.error.details.forEach((errorDetail) => {
       const fieldName = errorDetail.context?.key || '';
-      const errorMessage = errorDetail.message;
+      const errorMessage = req.t(errorDetail.message);
       //a field might have a lot of errors. we only want to capture the first error 
       if (!validationErrors[fieldName]) {
         validationErrors[fieldName] = errorMessage;
@@ -39,32 +59,9 @@ export function signUpValidationErrorGenerator(
 
     responseError = {
       signUpStatus: SIGNUP_STATUS.failed,
-      message: signUpValidator.errorMessage,
+      message: req.t(signUpValidator.errorMessage),
       validationErrors,
     };
   }
   return responseError;
 } 
-
-  export async function checkUsernameExist(data: string): Promise<void> {
-    const userExist = await UserHelperModel.userExistsByUserName(data);
-    if (userExist) {
-      throw new Error(`Username: ${data} already exists`);
-    }
-  }
-
-// export async function checkEmailExist(data: string): Promise<void> {
-//   const userExist = await UserHelperModel.userExistsByEmail(data);
-//   if (userExist) {
-//     throw new Error(`Email: ${data} already exists`);
-//   }
-// }
-
-
-// if (await UserHelperModel.userExistsByUserName(newUserData.username)) {
-//   throw new UserExistsError(`Username: ${newUserData.username} already exists`, 'username');
-// }
-
-// if (await UserHelperModel.userExistsByEmail(newUserData.email)) {
-//   throw new UserExistsError(`Email: ${newUserData.email} already exists`, 'email');
-// }
