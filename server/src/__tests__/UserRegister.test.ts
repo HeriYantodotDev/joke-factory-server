@@ -10,6 +10,7 @@ import {
   // ResponseUserCreatedFailed 
 } from '../models';
 import { ErrorMessageInvalidJSON } from '../utils';
+import nodemailerStub from 'nodemailer-stub';
 
 interface optionPostUser {
   language?: string,
@@ -153,6 +154,15 @@ describe('User Registration API', () => {
     expect(response.status).toBe(200);
     expect(savedUser.activationToken).toBeTruthy();
   });
+
+  test('sends an Account activation email with activationToken', async () => {
+    await postUser();
+    const lastMail = nodemailerStub.interactsWithMail.lastMail();
+    expect(lastMail.to[0]).toBe('user1@gmail.com');
+    const users = await User.findAll();
+    const savedUser = users[0];
+    expect(lastMail.content).toContain(savedUser.activationToken);
+  });
   //Internationalization1
   test(`Returns 200 + ${userCreated} + save to database, when the sign up request is valid`, 
     async () => {
@@ -231,8 +241,6 @@ describe('User Registration API', () => {
     expect(response.body).toMatchObject(expectedResponse);
     expect(response.body.validationErrors[duplicatefield]).toBe(expectedResponse.validationErrors[duplicatefield]);
   });
-
-
   //TODO: Test for several field errors. It should return object with validationErros properties for all field. 
 });
 
@@ -409,5 +417,3 @@ describe('UserHelperController', () => {
     });
   });
 });
-
-

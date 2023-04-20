@@ -2,6 +2,7 @@ import { User } from './User.model';
 import { NewUser, UserDataFromDB } from './user.types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { sendAccountActivation } from '../../email/EmailService';
 
 export class UserHelperModel {
   public static async createUser(newUser: NewUser): Promise<UserDataFromDB> {
@@ -10,6 +11,8 @@ export class UserHelperModel {
     const userWithHashAndToken = UserHelperModel.createUserWithHashAndToken(userWithHash);
 
     const user: User = await User.create(userWithHashAndToken);
+
+    await sendAccountActivation(user);
 
     const { id, username, email } = user;
 
