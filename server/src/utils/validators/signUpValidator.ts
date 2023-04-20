@@ -39,7 +39,17 @@ export const signUpSchema = Joi.object({
       'string.empty': 'errorPasswordEmpty',
       'string.min': 'errorPassword2',
     }),
+}).options({
+    allowUnknown: false,
+}).messages({
+  'object.unknown': 'customFieldNotAllowed',
 });
+
+
+// .unknown(true)
+//   .messages({
+//     'any.unknown': 'fieldNotAllowed',
+//   });
 
 export function signUpValidationErrorGenerator(
   signUpValidator: Validator,

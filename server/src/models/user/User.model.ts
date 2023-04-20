@@ -16,6 +16,8 @@ export class User extends Model<
   declare username: string;
   declare email: string;
   declare password: string;
+  declare inactive: CreationOptional<boolean>;
+  declare activationToken: CreationOptional<string>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -36,6 +38,11 @@ User.init(
       unique: true,
     },
     password: DataTypes.STRING,
+    inactive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+    },
+    activationToken: DataTypes.STRING,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },
