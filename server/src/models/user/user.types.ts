@@ -1,8 +1,10 @@
 export interface NewUser {
-  [key: string]: string,
+  [key: string]: string | boolean | undefined,
   username: string,
   email: string,
   password: string,
+  inactive?: boolean,
+  activationToken?: string,
 }
 
 export interface UserDataFromDB {

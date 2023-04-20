@@ -10,6 +10,7 @@ import {
   // ResponseUserCreatedFailed 
 } from '../models';
 import { ErrorMessageInvalidJSON } from '../utils';
+import nodemailerStub from 'nodemailer-stub';
 
 interface optionPostUser {
   language?: string,
@@ -99,8 +100,8 @@ describe('User Registration API', () => {
   const userCreated = 'User is created';
   const userSizeMin = '"username" must be at least 3 characters long';
   const userSizeMax = '"username" must not be longer than 30 characters long';
+  const customFieldNotAllowed = 'Custom Field is not allowed';
   
-
   beforeAll(() => {
     return sequelize.sync({force:true});
   });
@@ -136,6 +137,31 @@ describe('User Registration API', () => {
       signUpStatus: 'failed',
       message: 'Some Errors!!!!!',
     });
+  });
+  //todo: refactor this in to Returns 200
+  test('creates user in inactive mode', async () => {
+    const response = await postUser();
+    const userList = await User.findAll();
+    const savedUser = userList[0];
+    expect(response.status).toBe(200);
+    expect(savedUser.inactive).toBe(true);
+  });
+  //todo: refactor this in to Returns 200
+  test('creates an activationToken for user', async () => {
+    const response = await postUser();
+    const userList = await User.findAll();
+    const savedUser = userList[0];
+    expect(response.status).toBe(200);
+    expect(savedUser.activationToken).toBeTruthy();
+  });
+
+  test('sends an Account activation email with activationToken', async () => {
+    await postUser();
+    const lastMail = nodemailerStub.interactsWithMail.lastMail();
+    expect(lastMail.to[0]).toBe('user1@gmail.com');
+    const users = await User.findAll();
+    const savedUser = users[0];
+    expect(lastMail.content).toContain(savedUser.activationToken);
   });
   //Internationalization1
   test(`Returns 200 + ${userCreated} + save to database, when the sign up request is valid`, 
@@ -178,9 +204,12 @@ describe('User Registration API', () => {
     ${'email'}        | ${'email@@yahoo.com'}     | ${errorEmailInvalid}
     ${'email'}        | ${'email@gmailcom'}       | ${errorEmailInvalid}
     ${'email'}        | ${'emailgmailcom'}        | ${errorEmailInvalid}
-    ${'username'}     | ${'as'}                  | ${userSizeMin}
+    ${'username'}     | ${'as'}                   | ${userSizeMin}
     ${'username'}     | ${longUserName}           | ${userSizeMax}
+    ${'inactive'}     | ${true}                   | ${customFieldNotAllowed}
+    ${'asdf'}         | ${'asdf'}                 | ${customFieldNotAllowed}
   `('If $field is = "$value", $errorMessage is received', async({field, value, errorMessage}) => {
+
     const expectedResponse = signUpFailedGenerator(field, errorMessage);
     const userModified: NewUser = {
       username: 'user1',
@@ -212,8 +241,6 @@ describe('User Registration API', () => {
     expect(response.body).toMatchObject(expectedResponse);
     expect(response.body.validationErrors[duplicatefield]).toBe(expectedResponse.validationErrors[duplicatefield]);
   });
-
-
   //TODO: Test for several field errors. It should return object with validationErros properties for all field. 
 });
 
@@ -231,6 +258,7 @@ describe('Internationalization', () => {
   const userCreated = 'Akun pengguna telah dibuat';
   const userSizeMin = '"nama pengguna" minimal harus 3 karakter';
   const userSizeMax = '"nama pengguna" tidak boleh lebih dari 30 karakter';
+  const customFieldNotAllowed = 'Field acak tidak diperbolehkan';
   beforeAll(() => {
     return sequelize.sync({force:true});
   });
@@ -282,6 +310,8 @@ describe('Internationalization', () => {
     ${'email'}        | ${'emailgmailcom'}        | ${errorEmailInvalid}
     ${'username'}     | ${'as'}                   | ${userSizeMin}
     ${'username'}     | ${longUserName}           | ${userSizeMax}
+    ${'inactive'}     | ${true}                   | ${customFieldNotAllowed}
+    ${'asdf'}         | ${'asdf'}                 | ${customFieldNotAllowed}
   `('If $field is = "$value", $errorMessage is received', async({field, value, errorMessage}) => {
     const expectedResponse = signUpFailedGenerator(field, errorMessage);
     const userModified: NewUser = {
@@ -387,5 +417,3 @@ describe('UserHelperController', () => {
     });
   });
 });
-
-
