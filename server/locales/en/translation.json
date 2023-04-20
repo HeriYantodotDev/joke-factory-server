@@ -4,10 +4,12 @@
   "errorUsernameEmpty": "\"username\" is not allowed to be empty",
   "errorEmailEmpty": "\"email\" is not allowed to be empty",
   "errorPasswordEmpty": "\"password\" is not allowed to be empty",
-  "errorUsernameNull": "\"username\" must be a string",
-  "errorEmailNull": "\"email\" must be a string",
-  "errorPasswordNull": "\"password\" must be a string",
+  "errorUsernameNull": "\"username\" must be a text",
+  "errorEmailNull": "\"email\" must be a text",
+  "errorPasswordNull": "\"password\" must be a text",
   "errorEmailInvalid": "\"email\" must be a valid email",
   "errorUserExist": "already exists",
-  "userCreated": "User is created"
+  "userCreated": "User is created",
+  "userSizeMin": "\"username\" must be at least 3 characters long",
+  "userSizeMax": "\"username\" must not be longer than 30 characters long"
 }

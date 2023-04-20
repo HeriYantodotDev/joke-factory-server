@@ -23,6 +23,7 @@ const bodyValid: NewUser = {
 const userBodyValid = 'user1';
 const emailBodyValid = 'user1@gmail.com';
 const passBodyValid = 'A4GuaN@SmZ';
+const longUserName = 'akaksjdyrhakaksjdyrhakaksjdyrha';
 
 const bodyValidSameEmail: NewUser = {
   username: 'userFree',
@@ -90,12 +91,15 @@ describe('User Registration API', () => {
   const errorUsernameEmpty = '"username" is not allowed to be empty';
   const errorEmailEmpty = '"email" is not allowed to be empty';
   const errorPasswordEmpty = '"password" is not allowed to be empty';
-  const errorUsernameNull = '"username" must be a string';
-  const errorEmailNull = '"email" must be a string';
-  const errorPasswordNull = '"password" must be a string';
+  const errorUsernameNull = '"username" must be a text';
+  const errorEmailNull = '"email" must be a text';
+  const errorPasswordNull = '"password" must be a text';
   const errorEmailInvalid = '"email" must be a valid email';
   const errorUserExist = 'already exists';
   const userCreated = 'User is created';
+  const userSizeMin = '"username" must be at least 3 characters long';
+  const userSizeMax = '"username" must not be longer than 30 characters long';
+  
 
   beforeAll(() => {
     return sequelize.sync({force:true});
@@ -174,6 +178,8 @@ describe('User Registration API', () => {
     ${'email'}        | ${'email@@yahoo.com'}     | ${errorEmailInvalid}
     ${'email'}        | ${'email@gmailcom'}       | ${errorEmailInvalid}
     ${'email'}        | ${'emailgmailcom'}        | ${errorEmailInvalid}
+    ${'username'}     | ${'as'}                  | ${userSizeMin}
+    ${'username'}     | ${longUserName}           | ${userSizeMax}
   `('If $field is = "$value", $errorMessage is received', async({field, value, errorMessage}) => {
     const expectedResponse = signUpFailedGenerator(field, errorMessage);
     const userModified: NewUser = {
@@ -217,12 +223,14 @@ describe('Internationalization', () => {
   const errorUsernameEmpty = '"nama pengguna" tidak boleh kosong';
   const errorEmailEmpty = '"email" tidak boleh kosong';
   const errorPasswordEmpty = '"kata sandi" tidak boleh kosong';
-  const errorUsernameNull = '"nama pengguna" harus berupa string';
-  const errorEmailNull = '"nama pengguna" harus berupa string';
-  const errorPasswordNull = '"kata sandi" harus berupa string';
+  const errorUsernameNull = '"nama pengguna" harus berupa text';
+  const errorEmailNull = '"nama pengguna" harus berupa text';
+  const errorPasswordNull = '"kata sandi" harus berupa text';
   const errorEmailInvalid = '"email" harus berupa email yang valid';
   const errorUserExist = 'sudah terdaftar';
   const userCreated = 'Akun pengguna telah dibuat';
+  const userSizeMin = '"nama pengguna" minimal harus 3 karakter';
+  const userSizeMax = '"nama pengguna" tidak boleh lebih dari 30 karakter';
   beforeAll(() => {
     return sequelize.sync({force:true});
   });
@@ -272,6 +280,8 @@ describe('Internationalization', () => {
     ${'email'}        | ${'email@@yahoo.com'}     | ${errorEmailInvalid}
     ${'email'}        | ${'email@gmailcom'}       | ${errorEmailInvalid}
     ${'email'}        | ${'emailgmailcom'}        | ${errorEmailInvalid}
+    ${'username'}     | ${'as'}                   | ${userSizeMin}
+    ${'username'}     | ${longUserName}           | ${userSizeMax}
   `('If $field is = "$value", $errorMessage is received', async({field, value, errorMessage}) => {
     const expectedResponse = signUpFailedGenerator(field, errorMessage);
     const userModified: NewUser = {

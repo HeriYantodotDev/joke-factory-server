@@ -2,7 +2,7 @@ import Joi from 'joi';
 import { Validator } from './Validator';
 import { ResponseUserCreatedFailed, SIGNUP_STATUS } from '../../models';
 import { Request } from 'express';
-
+//TODO: Add More validation error Message
 export const signUpSchema = Joi.object({
   username: Joi.string()
     .alphanum()
@@ -12,6 +12,8 @@ export const signUpSchema = Joi.object({
     .messages({
       'string.empty': 'errorUsernameEmpty',
       'string.base': 'errorUsernameNull',
+      'string.min' : 'userSizeMin',
+      'string.max' : 'userSizeMax',
     })
     ,
   email: Joi.string()
