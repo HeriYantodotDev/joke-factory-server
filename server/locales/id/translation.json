@@ -4,10 +4,12 @@
   "errorUsernameEmpty": "\"nama pengguna\" tidak boleh kosong",
   "errorEmailEmpty": "\"email\" tidak boleh kosong",
   "errorPasswordEmpty": "\"kata sandi\" tidak boleh kosong",
-  "errorUsernameNull": "\"nama pengguna\" harus berupa string",
-  "errorEmailNull": "\"nama pengguna\" harus berupa string",
-  "errorPasswordNull": "\"kata sandi\" harus berupa string",
+  "errorUsernameNull": "\"nama pengguna\" harus berupa text",
+  "errorEmailNull": "\"nama pengguna\" harus berupa text",
+  "errorPasswordNull": "\"kata sandi\" harus berupa text",
   "errorEmailInvalid": "\"email\" harus berupa email yang valid",
   "errorUserExist": "sudah terdaftar",
-  "userCreated": "Akun pengguna telah dibuat"
+  "userCreated": "Akun pengguna telah dibuat",
+  "userSizeMin": "\"nama pengguna\" minimal harus 3 karakter",
+  "userSizeMax": "\"nama pengguna\" tidak boleh lebih dari 30 karakter"
 }
