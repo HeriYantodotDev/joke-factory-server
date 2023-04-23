@@ -13,5 +13,7 @@
   "userSizeMin": "\"username\" must be at least 3 characters long",
   "userSizeMax": "\"username\" must not be longer than 30 characters long",
   "customFieldNotAllowed": "Custom Field is not allowed",
-  "emailFailure": "Email Failure"
+  "emailFailure": "Email Failure",
+  "tokenError": "This account is either active, or the token is invalid",
+  "accountActivated": "Account is activated"
 }

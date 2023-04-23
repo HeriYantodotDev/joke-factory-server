@@ -37,3 +37,8 @@ export interface ResponseUserCreatedFailed extends ResponseUserCreatedFailedFron
   signUpStatus: SIGNUP_STATUS.failed,
   message: string,
 }
+
+export interface ResponseUserValidationSuccess {
+  signUpStatus: SIGNUP_STATUS.success,
+  message: string,
+}

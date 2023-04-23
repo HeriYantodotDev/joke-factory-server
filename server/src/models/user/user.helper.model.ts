@@ -79,7 +79,6 @@ export class UserHelperModel {
       activationToken: '',
     });
     await user.save();
-    console.log(user.activationToken);
   }
 
 }

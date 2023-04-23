@@ -93,6 +93,15 @@ function generateErrorUserExist(field: string,  value: string, errorUserExist: s
   return `${field}: ${value} ${errorUserExist}`;
 }
 
+async function sendTokenToServer(token: string, option?: optionPostUser) {
+  const agent = request(app).post(`/api/1.0/users/token/${token}`);
+  
+  if (option?.language) {
+    agent.set('Accept-Language', option.language);
+  }
+  return await agent.send();
+}
+
 let lastMail: string;
 let server: SMTPServer;
 let simulateSmtpFailure = false;
@@ -484,12 +493,18 @@ describe('UserHelperController', () => {
 });
 
 describe('Activating account', () => {
+
+  const tokenErrorEN = 'This account is either active, or the token is invalid';
+  const tokenErrorID = 'Akun ini telah aktif, atau token tidak valid';
+  const accountActivatedEN = 'Account is activated';
+  const accountActivatedID = 'Akun telah berhasil diaktifkan';
+
   test('Set the inactive properties to false if the token is correct', async () => {
     await postUser();
     let user = await User.findAll();
     const token = user[0].activationToken; 
 
-    await request(app).post(`/api/1.0/users/token/${token}`).send();
+    await sendTokenToServer(token);
 
     user = await User.findAll();
 
@@ -501,10 +516,48 @@ describe('Activating account', () => {
 
     const token = user[0].activationToken; 
 
-    await request(app).post(`/api/1.0/users/token/${token}`).send();
+    await sendTokenToServer(token);
 
     user = await User.findAll();
 
     expect(user[0].activationToken).toBeFalsy();
+  });
+  test('Doesn\'t activate the user, if the token is wrong', async () => {
+    await postUser();
+    const token = 'wrong-token-you-know';
+
+    await sendTokenToServer(token);
+
+    const user = await User.findAll();
+
+    expect(user[0].inactive).toBe(true);
+  });
+  test('Returns 400 bad request, when the token is wrong', async () => {
+    await postUser();
+    const token = 'wrong-token-you-know';
+    const response = await sendTokenToServer(token);
+    expect(response.status).toBe(400);
+  });
+  test.each`
+    language        | tokenStatus         | message
+    ${'en'}         | ${'wrong'}          | ${tokenErrorEN}
+    ${'id'}         | ${'wrong'}          | ${tokenErrorID}
+    ${'en'}         | ${'correct'}        | ${accountActivatedEN}
+    ${'id'}         | ${'correct'}        | ${accountActivatedID}
+  `('If token is $tokenStatus & language $language, then "$message" is received',
+   async({language, tokenStatus, message}) => {
+    await postUser();
+    
+    let token: string;
+
+    if (tokenStatus === 'wrong') {
+      token = 'wrong-token-here';
+    } else {
+      const user = await User.findAll();
+      token = user[0].activationToken;
+    }
+
+    const response = await sendTokenToServer(token, {language});
+    expect(response.body.message).toBe(message);
   });
 });

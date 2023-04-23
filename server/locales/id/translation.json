@@ -13,5 +13,7 @@
   "userSizeMin": "\"nama pengguna\" minimal harus 3 karakter",
   "userSizeMax": "\"nama pengguna\" tidak boleh lebih dari 30 karakter",
   "customFieldNotAllowed": "Field acak tidak diperbolehkan",
-  "emailFailure": "Gagal mengirimkan email"
+  "emailFailure": "Gagal mengirimkan email",
+  "tokenError": "Akun ini telah aktif, atau token tidak valid",
+  "accountActivated": "Akun telah berhasil diaktifkan"
 }

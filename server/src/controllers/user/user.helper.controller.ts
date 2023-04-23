@@ -6,7 +6,8 @@ import {
   ResponseUserCreatedFailed,
   ResponseUserCreatedSuccess,
   UserDataFromDB,
-  SendAccountActivationFailed
+  SendAccountActivationFailed,
+  ResponseUserValidationSuccess
 } from '../../models';
 
 class UserExistsError extends Error {
@@ -14,6 +15,13 @@ class UserExistsError extends Error {
   constructor(message: string, code: string) {
     super(message);
     this.code = code;
+  }
+}
+
+class TokenError extends Error {
+  public code = 400;
+  constructor(message = 'tokenError') {
+    super(message);
   }
 }
 
@@ -54,15 +62,26 @@ export class UserHelperController {
     res: Response
   ): Promise<void> {
 
-    const token = req.params.token;
+    try {
+      const token = req.params.token;
+      const user = await UserHelperModel.findUserByToken(token);
+    
+      if (!user) {
+        throw new TokenError();
+      } 
 
-    const user = await UserHelperModel.findUserByToken(token);
-  
-    if (user) {
       await UserHelperModel.activateUser(user);
-    } 
-    res.send('a');
-    return;
+      const responseSuccess: ResponseUserValidationSuccess = {
+        signUpStatus: SIGNUP_STATUS.success,
+        message: req.t('accountActivated'),
+      };
+
+      res.status(200).send(responseSuccess);
+      return;
+    } catch(err) {
+      UserHelperController.handleSignUpError(err, req, res);
+      return;
+    }
   }
 
   public static handleSignUpError(err: unknown, req: Request, res: Response): void {
@@ -74,6 +93,16 @@ export class UserHelperController {
         message: req.t(err.message),
       };
 
+      res.status(err.code).send(responseFailed);
+      return;
+    }
+
+    if (err instanceof TokenError) {
+      responseFailed = {
+        signUpStatus: SIGNUP_STATUS.failed,
+        message: req.t(err.message),
+      };
+      
       res.status(err.code).send(responseFailed);
       return;
     }
