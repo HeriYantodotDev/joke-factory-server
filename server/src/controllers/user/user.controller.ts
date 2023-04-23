@@ -4,11 +4,15 @@ import { bodyValidatorMW, signUpSchema, signUpValidationErrorGenerator } from '.
 
 const validationOption = {abortEarly: false};
 
-@routerConfig('/api/1.0')
+@routerConfig('/api/1.0/users')
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class UserController {
-  @post('/users', UserHelperController.httpPostSignUp)
+  @post('/', UserHelperController.httpPostSignUp)
   @use(bodyValidatorMW(signUpSchema, signUpValidationErrorGenerator, validationOption))
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   handleSignUpRequest(): void {}
+  
+  @post('/token/:token', UserHelperController.httpActivateAccount )
+   // eslint-disable-next-line @typescript-eslint/no-empty-function
+  handleActivation():void{}
 }

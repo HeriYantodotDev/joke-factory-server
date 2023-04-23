@@ -49,6 +49,22 @@ export class UserHelperController {
     }
   }
 
+  public static async httpActivateAccount(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+
+    const token = req.params.token;
+
+    const user = await UserHelperModel.findUserByToken(token);
+  
+    if (user) {
+      await UserHelperModel.activateUser(user);
+    } 
+    res.send('a');
+    return;
+  }
+
   public static handleSignUpError(err: unknown, req: Request, res: Response): void {
     let responseFailed: ResponseUserCreatedFailed;
 

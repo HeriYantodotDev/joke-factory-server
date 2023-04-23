@@ -68,4 +68,18 @@ export class UserHelperModel {
   private static generateToken(length: number) {
     return crypto.randomBytes(length).toString('hex').substring(0, length);
   }
+
+  public static async findUserByToken(token: string): Promise<User | null> {
+    return await User.findOne({where: {activationToken: token}});
+  }
+
+  public static async activateUser(user: User): Promise<void>{
+    user.set({
+      inactive: false,
+      activationToken: '',
+    });
+    await user.save();
+    console.log(user.activationToken);
+  }
+
 }

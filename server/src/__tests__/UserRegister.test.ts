@@ -482,3 +482,29 @@ describe('UserHelperController', () => {
     });
   });
 });
+
+describe('Activating account', () => {
+  test('Set the inactive properties to false if the token is correct', async () => {
+    await postUser();
+    let user = await User.findAll();
+    const token = user[0].activationToken; 
+
+    await request(app).post(`/api/1.0/users/token/${token}`).send();
+
+    user = await User.findAll();
+
+    expect(user[0].inactive).toBe(false);
+  });
+  test('Delete the token after user is activated', async () => {
+    await postUser();
+    let user = await User.findAll();
+
+    const token = user[0].activationToken; 
+
+    await request(app).post(`/api/1.0/users/token/${token}`).send();
+
+    user = await User.findAll();
+
+    expect(user[0].activationToken).toBeFalsy();
+  });
+});
