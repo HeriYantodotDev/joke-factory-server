@@ -10,10 +10,17 @@ import {
   // ResponseUserCreatedFailed 
 } from '../models';
 import { ErrorMessageInvalidJSON } from '../utils';
-import nodemailerStub from 'nodemailer-stub';
+import { SMTPServer } from 'smtp-server';
 
 interface optionPostUser {
   language?: string,
+}
+
+class ErrorSimulate extends Error {
+  public responseCode = 0;
+  constructor(message: string) {
+    super(message);
+  }
 }
 
 const bodyValid: NewUser = {
@@ -86,6 +93,45 @@ function generateErrorUserExist(field: string,  value: string, errorUserExist: s
   return `${field}: ${value} ${errorUserExist}`;
 }
 
+let lastMail: string;
+let server: SMTPServer;
+let simulateSmtpFailure = false;
+
+beforeAll( () => {
+  server = new SMTPServer({
+    authOptional: true,
+    onData(stream, session, callback) {
+      let mailBody = '';
+      stream.on('data', (data) => {
+        mailBody += data.toString();
+      });
+      stream.on('end', () => {
+        if (simulateSmtpFailure) {
+          const err = new ErrorSimulate('Invalid mailbox');
+          err.responseCode = 533;
+          return callback(err);
+        }
+        lastMail = mailBody;
+        callback();
+      });
+    },
+  });
+
+  server.listen(8585, 'localhost');
+
+  return sequelize.sync({force:true});
+});
+
+beforeEach(() => {
+  simulateSmtpFailure = false;
+  jest.restoreAllMocks();
+  return User.destroy({ truncate: true });
+});
+
+afterAll(() => {
+  server.close();
+});
+
 describe('User Registration API', () => {
   const errorPassword1 = 'Password must contain at least 1 uppercase, 1 lowercase, 1 symbol, and 1 number';
   const errorPassword2 = '"password" length must be at least 8 characters long';
@@ -101,15 +147,7 @@ describe('User Registration API', () => {
   const userSizeMin = '"username" must be at least 3 characters long';
   const userSizeMax = '"username" must not be longer than 30 characters long';
   const customFieldNotAllowed = 'Custom Field is not allowed';
-  
-  beforeAll(() => {
-    return sequelize.sync({force:true});
-  });
-
-  beforeEach(() => {
-    jest.restoreAllMocks();
-    return User.destroy({ truncate: true });
-  });
+  const emailFailure = 'Email Failure';
   
   test('Returns 400 & error Message, when JSON Request is invalid', async () => {
     const response = await postInvalidJson();
@@ -154,14 +192,40 @@ describe('User Registration API', () => {
     expect(response.status).toBe(200);
     expect(savedUser.activationToken).toBeTruthy();
   });
-
+  //todo: refactor this in to Returns 200
   test('sends an Account activation email with activationToken', async () => {
     await postUser();
-    const lastMail = nodemailerStub.interactsWithMail.lastMail();
-    expect(lastMail.to[0]).toBe('user1@gmail.com');
     const users = await User.findAll();
     const savedUser = users[0];
-    expect(lastMail.content).toContain(savedUser.activationToken);
+    expect(lastMail).toContain('user1@gmail.com');
+    expect(lastMail).toContain(savedUser.activationToken);
+  });
+
+  test('returns 502 bad gateway when sending email fails', async () => {
+    // jest.spyOn( EmailService, 'sendAccountActivation')
+    //   .mockRejectedValue({message: 'Failed to deliver email'});
+
+    simulateSmtpFailure = true;
+    const response = await postUser();
+    expect(response.status).toBe(502);
+  });
+  //Internationalization4
+  test('returns Email failure when sending email fails', async () => {
+    // jest.spyOn( EmailService, 'sendAccountActivation')
+    //   .mockRejectedValue({message: 'Failed to deliver email'});
+    simulateSmtpFailure = true;
+    const response = await postUser();
+    expect(response.body.message).toBe(emailFailure);
+  });
+  //Internationalization5
+  test('It doesn\'t save user if activation email fails ', async () => {
+    // jest.spyOn( EmailService, 'sendAccountActivation')
+    //   .mockRejectedValue({message: 'Failed to deliver email'});
+    simulateSmtpFailure = true;
+    const response = await postUser();
+    const users = await User.findAll();
+    expect(response.body.message).toBe(emailFailure);
+    expect(users.length).toBe(0);
   });
   //Internationalization1
   test(`Returns 200 + ${userCreated} + save to database, when the sign up request is valid`, 
@@ -241,7 +305,7 @@ describe('User Registration API', () => {
     expect(response.body).toMatchObject(expectedResponse);
     expect(response.body.validationErrors[duplicatefield]).toBe(expectedResponse.validationErrors[duplicatefield]);
   });
-  //TODO: Test for several field errors. It should return object with validationErros properties for all field. 
+  // TODO: Test for several field errors. It should return object with validationErros properties for all field. 
 });
 
 describe('Internationalization', () => {
@@ -259,14 +323,8 @@ describe('Internationalization', () => {
   const userSizeMin = '"nama pengguna" minimal harus 3 karakter';
   const userSizeMax = '"nama pengguna" tidak boleh lebih dari 30 karakter';
   const customFieldNotAllowed = 'Field acak tidak diperbolehkan';
-  beforeAll(() => {
-    return sequelize.sync({force:true});
-  });
-
-  beforeEach(() => {
-    jest.restoreAllMocks();
-    return User.destroy({ truncate: true });
-  });
+  const emailFailure = 'Gagal mengirimkan email';
+  
   //Internationalization1
   test(`Returns 200 + ${userCreated} + save to database, when the sign up request is valid`, 
   async () => {
@@ -344,6 +402,14 @@ describe('Internationalization', () => {
     expect(response.body).toMatchObject(expectedResponse);
     expect(response.body.validationErrors[duplicatefield]).toBe(expectedResponse.validationErrors[duplicatefield]);
   });
+  //Internationalization4
+  test(`returns "${emailFailure}" when sending email fails & language ID`, async () => {
+    // jest.spyOn( EmailService, 'sendAccountActivation')
+    //   .mockRejectedValue({message: 'Failed to deliver email'});
+    simulateSmtpFailure = true;
+    const response = await postUser(bodyValid, {language: 'id'});
+    expect(response.body.message).toBe(emailFailure);
+  });
 });
 
 describe('UserHelperController', () => {
@@ -384,8 +450,7 @@ describe('UserHelperController', () => {
       }));
     });
 
-    test('should return a 400 response with a failed status and' +
-    '"Unknown Error" message when passed an unknown error', async () => {
+    test('should return a 400 response + Unknown Error Message when passed an unknown error', async () => {
       const error = { message: 'Something went wrong' };
       const res: Response = {
         status: jest.fn().mockReturnThis(),
