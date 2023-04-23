@@ -2,7 +2,16 @@ import { User } from './User.model';
 import { NewUser, UserDataFromDB } from './user.types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { sendAccountActivation } from '../../email/EmailService';
+import {sendAccountActivation} from '../../email/EmailService'; 
+import { sequelize } from '../../config/database';
+
+export class SendAccountActivationFailed extends Error {
+  public code: number;
+  constructor(message: string) {
+    super(message);
+    this.code = 502;
+  }
+}
 
 export class UserHelperModel {
   public static async createUser(newUser: NewUser): Promise<UserDataFromDB> {
@@ -10,12 +19,19 @@ export class UserHelperModel {
 
     const userWithHashAndToken = UserHelperModel.createUserWithHashAndToken(userWithHash);
 
-    const user: User = await User.create(userWithHashAndToken);
+    const transaction = await sequelize.transaction();
 
-    await sendAccountActivation(user);
+    const user: User = await User.create(userWithHashAndToken, {transaction});
 
+    try {
+      await sendAccountActivation(user);
+    } catch (err) {
+      await transaction.rollback();
+      throw new SendAccountActivationFailed('emailFailure');
+    }
+
+    await transaction.commit();
     const { id, username, email } = user;
-
     return { id, username, email };
   }
 

@@ -5,7 +5,8 @@ import {
   SIGNUP_STATUS,
   ResponseUserCreatedFailed,
   ResponseUserCreatedSuccess,
-  UserDataFromDB
+  UserDataFromDB,
+  SendAccountActivationFailed
 } from '../../models';
 
 class UserExistsError extends Error {
@@ -26,17 +27,13 @@ export class UserHelperController {
     try {
       if (await UserHelperModel.userExistsByUserName(newUserData.username)) {
         throw new UserExistsError('errorUserExist', 'username');
-        // throw new UserExistsError(`username: ${newUserData.username} already exists`, 'username');
       }
 
       if (await UserHelperModel.userExistsByEmail(newUserData.email)) {
         throw new UserExistsError('errorUserExist', 'email');
-        // throw new UserExistsError(`email: ${newUserData.email} already exists`, 'email');
       }
 
-      const newUser: UserDataFromDB = await UserHelperModel.createUser(
-        newUserData
-      );
+      const newUser: UserDataFromDB = await UserHelperModel.createUser(newUserData);
 
       const responseSuccess: ResponseUserCreatedSuccess = {
         signUpStatus: SIGNUP_STATUS.success,
@@ -54,6 +51,17 @@ export class UserHelperController {
 
   public static handleSignUpError(err: unknown, req: Request, res: Response): void {
     let responseFailed: ResponseUserCreatedFailed;
+
+    if (err instanceof SendAccountActivationFailed){
+      responseFailed = {
+        signUpStatus: SIGNUP_STATUS.failed,
+        message: req.t(err.message),
+      };
+
+      res.status(err.code).send(responseFailed);
+      return;
+    }
+
     if ( !(err instanceof Error)) {
       responseFailed = {
         signUpStatus: SIGNUP_STATUS.failed,

@@ -12,5 +12,6 @@
   "userCreated": "Akun pengguna telah dibuat",
   "userSizeMin": "\"nama pengguna\" minimal harus 3 karakter",
   "userSizeMax": "\"nama pengguna\" tidak boleh lebih dari 30 karakter",
-  "customFieldNotAllowed": "Field acak tidak diperbolehkan"
+  "customFieldNotAllowed": "Field acak tidak diperbolehkan",
+  "emailFailure": "Gagal mengirimkan email"
 }
