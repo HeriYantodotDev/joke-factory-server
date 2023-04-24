@@ -1,9 +1,14 @@
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import nodemailer from 'nodemailer';
 
-export const transporter = nodemailer.createTransport({
-  host: 'localhost',
-  port: 8585,
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+const configSTring = process.env.transporter_config;
+if (!configSTring) {
+  throw new Error(
+    'Please set up configuration for Email transport'
+  );
+}
+
+const config = JSON.parse(configSTring);
+
+export const transporter = nodemailer.createTransport(config);
