@@ -1,9 +1,11 @@
 import { RequestHandler, Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { Validator } from '../validators/Validator';
+import { ErrorResponse } from '../../models';
+import { ErrorHandle, ErrorBodyValidation } from '../Errors';
 
 export interface ValidationResGenerator{
-  (validator: Validator, req: Request): object | undefined,
+  (validator: Validator, req: Request): ErrorResponse | undefined,
 }
 
 export function bodyValidatorMW(
@@ -24,7 +26,9 @@ export function bodyValidatorMW(
     const validationError = resGenerator(validator, req);
 
     if (validationError) {
-      res.status(400).send(validationError);
+      const {message, validationErrors} = validationError;
+      ErrorHandle(new ErrorBodyValidation(message, validationErrors), req, res, next);
+      // res.status(400).send(validationError);
       return;
     }
 

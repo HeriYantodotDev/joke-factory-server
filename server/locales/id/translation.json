@@ -15,5 +15,6 @@
   "customFieldNotAllowed": "Field acak tidak diperbolehkan",
   "emailFailure": "Gagal mengirimkan email",
   "tokenError": "Akun ini telah aktif, atau token tidak valid",
-  "accountActivated": "Akun telah berhasil diaktifkan"
+  "accountActivated": "Akun telah berhasil diaktifkan",
+  "validationFailure": "Kegagalan Validasi"
 }

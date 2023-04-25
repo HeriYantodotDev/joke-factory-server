@@ -15,7 +15,8 @@
     "test": "NODE_ENV=test jest",
     "test:watch": "NODE_ENV=test jest --watchAll",
     "test:coverage": "NODE_ENV=test jest --coverage",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "ts:check": "tsc -p ."
   },
   "keywords": [],
   "author": "",

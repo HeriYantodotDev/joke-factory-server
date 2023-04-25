@@ -13,13 +13,7 @@ export interface UserDataFromDB {
   email: string,
 }
 
-export enum SIGNUP_STATUS {
-  failed = 'failed',
-  success = 'success',
-}
-
-//In the frontend here's how it looks :
-export interface ResponseUserCreatedFailedFrontEnd {
+export interface ValidationErrorResponse {
   validationErrors?: {
     username?: string,
     email?: string,
@@ -27,18 +21,17 @@ export interface ResponseUserCreatedFailedFrontEnd {
   },
 }
 
+export interface ErrorResponse extends ValidationErrorResponse {
+  message: string,
+  path?: string,
+  timeStamp?: number,
+}
+
 export interface ResponseUserCreatedSuccess {
-  signUpStatus: SIGNUP_STATUS.success,
   message: string,
   user: UserDataFromDB,
 }
 
-export interface ResponseUserCreatedFailed extends ResponseUserCreatedFailedFrontEnd {
-  signUpStatus: SIGNUP_STATUS.failed,
-  message: string,
-}
-
 export interface ResponseUserValidationSuccess {
-  signUpStatus: SIGNUP_STATUS.success,
   message: string,
 }
