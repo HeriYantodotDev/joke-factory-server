@@ -1,7 +1,8 @@
 import Joi from 'joi';
 import { Validator } from './Validator';
-import { ResponseUserCreatedFailed, SIGNUP_STATUS } from '../../models';
+import { ErrorResponse, ValidationErrorResponse} from '../../models';
 import { Request } from 'express';
+import { Locales } from '../Enum';
 //TODO: Add More validation error Message
 export const signUpSchema = Joi.object({
   username: Joi.string()
@@ -10,19 +11,19 @@ export const signUpSchema = Joi.object({
     .max(30)
     .required()
     .messages({
-      'string.empty': 'errorUsernameEmpty',
-      'string.base': 'errorUsernameNull',
-      'string.min' : 'userSizeMin',
-      'string.max' : 'userSizeMax',
+      'string.empty': Locales.errorUsernameEmpty,
+      'string.base': Locales.errorUsernameNull,
+      'string.min' : Locales.userSizeMin,
+      'string.max' : Locales.userSizeMax,
     })
     ,
   email: Joi.string()
     .email()
     .required()
     .messages({
-      'string.empty': 'errorEmailEmpty',
-      'string.base': 'errorEmailNull',
-      'string.email': 'errorEmailInvalid',
+      'string.empty': Locales.errorEmailEmpty,
+      'string.base': Locales.errorEmailNull,
+      'string.email': Locales.errorEmailInvalid,
     })
     ,
   password: Joi.string()
@@ -34,30 +35,24 @@ export const signUpSchema = Joi.object({
     )
     .required()
     .messages({
-      'string.base': 'errorPasswordNull',
-      'string.pattern.base': 'errorPassword1',
-      'string.empty': 'errorPasswordEmpty',
-      'string.min': 'errorPassword2',
+      'string.base': Locales.errorPasswordNull,
+      'string.pattern.base': Locales.errorPassword1,
+      'string.empty': Locales.errorPasswordEmpty,
+      'string.min': Locales.errorPassword2,
     }),
 }).options({
     allowUnknown: false,
 }).messages({
-  'object.unknown': 'customFieldNotAllowed',
+  'object.unknown': Locales.customFieldNotAllowed,
 });
-
-
-// .unknown(true)
-//   .messages({
-//     'any.unknown': 'fieldNotAllowed',
-//   });
 
 export function signUpValidationErrorGenerator(
   signUpValidator: Validator,
   req: Request
-): object | undefined {
+): ErrorResponse | undefined {
   const validationErrors: Record<string, string> = {};
 
-  let responseError: ResponseUserCreatedFailed | undefined = undefined;
+  let responseError: ErrorResponse | undefined = undefined;
 
   if ( signUpValidator.error && signUpValidator.errorMessage ) {
     signUpValidator.error.details.forEach((errorDetail) => {
@@ -68,11 +63,12 @@ export function signUpValidationErrorGenerator(
         validationErrors[fieldName] = errorMessage;
       }
     });
+    // This is just additional typecheck. 
+    const validationErrorsTypeCheck: ValidationErrorResponse['validationErrors'] = validationErrors;
 
     responseError = {
-      signUpStatus: SIGNUP_STATUS.failed,
       message: req.t(signUpValidator.errorMessage),
-      validationErrors,
+      validationErrors: validationErrorsTypeCheck,
     };
   }
   return responseError;

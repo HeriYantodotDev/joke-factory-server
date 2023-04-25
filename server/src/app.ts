@@ -10,6 +10,8 @@ import i18next from 'i18next';
 import Backend  from 'i18next-fs-backend';
 import middleware from 'i18next-http-middleware';
 
+import { ErrorHandle } from './utils/Errors';
+
 export const app = express();
 
 class startupMiddleware {
@@ -55,7 +57,18 @@ class Routers {
   }
 }
 
+class Errors {
+  static setUpErrorHandle(): void {
+    this.configErrorHandle();
+  }
+
+  private static configErrorHandle(): void {
+    app.use(ErrorHandle);
+  }
+}
+
 startupMiddleware.configMiddleware();
 Routers.setUpAllRouters();
+Errors.setUpErrorHandle();
 
 console.log(`Environment : ${process.env.NODE_ENV}`);

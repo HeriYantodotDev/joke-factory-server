@@ -15,5 +15,6 @@
   "customFieldNotAllowed": "Custom Field is not allowed",
   "emailFailure": "Email Failure",
   "tokenError": "This account is either active, or the token is invalid",
-  "accountActivated": "Account is activated"
+  "accountActivated": "Account is activated",
+  "validationFailure": "Validation Failure"
 }

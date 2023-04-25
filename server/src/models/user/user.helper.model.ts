@@ -4,14 +4,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import {sendAccountActivation} from '../../email/EmailService'; 
 import { sequelize } from '../../config/database';
-
-export class SendAccountActivationFailed extends Error {
-  public code: number;
-  constructor(message: string) {
-    super(message);
-    this.code = 502;
-  }
-}
+import { ErrorSendEmailActivation } from '../../utils/Errors';
 
 export class UserHelperModel {
   public static async createUser(newUser: NewUser): Promise<UserDataFromDB> {
@@ -27,7 +20,7 @@ export class UserHelperModel {
       await sendAccountActivation(user);
     } catch (err) {
       await transaction.rollback();
-      throw new SendAccountActivationFailed('emailFailure');
+      throw new ErrorSendEmailActivation();
     }
 
     await transaction.commit();
@@ -80,5 +73,4 @@ export class UserHelperModel {
     });
     await user.save();
   }
-
 }
