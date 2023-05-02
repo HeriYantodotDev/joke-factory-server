@@ -71,4 +71,5 @@ startupMiddleware.configMiddleware();
 Routers.setUpAllRouters();
 Errors.setUpErrorHandle();
 
+// eslint-disable-next-line no-console
 console.log(`Environment : ${process.env.NODE_ENV}`);

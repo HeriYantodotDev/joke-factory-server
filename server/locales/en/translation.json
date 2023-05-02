@@ -16,5 +16,6 @@
   "emailFailure": "Email Failure",
   "tokenError": "This account is either active, or the token is invalid",
   "accountActivated": "Account is activated",
-  "validationFailure": "Validation Failure"
+  "validationFailure": "Validation Failure",
+  "userNotFound": "User not found"
 }

@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 export interface NewUser {
   [key: string]: string | boolean | undefined,
   username: string,
@@ -34,4 +36,18 @@ export interface ResponseUserCreatedSuccess {
 
 export interface ResponseUserValidationSuccess {
   message: string,
+}
+
+export interface UserPagination {
+  content: UserDataFromDB[],
+  page: number,
+  size: number,
+  totalPages: number,
+}
+
+export interface RequestWithPagination extends Request {
+  pagination?: {
+    page: number,
+    size: number,
+  },
 }

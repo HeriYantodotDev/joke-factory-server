@@ -1,13 +1,7 @@
 import request from 'supertest';
 import { app } from '../app';
-import { User, NewUser, UserHelperModel } from '../models';
+import { User, NewUser, UserHelperModel, ResponseUserCreatedSuccess } from '../models';
 import { sequelize } from '../config/database';
-// import { UserHelperController } from '../controllers';
-// import { Response, Request } from 'express';
-import { 
-  ResponseUserCreatedSuccess
-  // ResponseUserCreatedFailed 
-} from '../models';
 import { ErrorMessageInvalidJSON } from '../utils';
 import { SMTPServer } from 'smtp-server';
 
@@ -49,7 +43,7 @@ enum messageTranslationID {
   validationFailure = 'Kegagalan Validasi',
 }
 
-interface optionPostUser {
+export interface optionPostUser {
   language?: string,
 }
 
@@ -147,7 +141,9 @@ let lastMail: string;
 let server: SMTPServer;
 let simulateSmtpFailure = false;
 
-beforeAll( () => {
+beforeAll( async () => {
+  await sequelize.sync();
+  
   server = new SMTPServer({
     authOptional: true,
     onData(stream, session, callback) {
@@ -169,16 +165,16 @@ beforeAll( () => {
 
   server.listen(8585, 'localhost');
 
-  return sequelize.sync({force:true});
 });
 
-beforeEach(() => {
+beforeEach( async () => {
   simulateSmtpFailure = false;
   jest.restoreAllMocks();
-  return User.destroy({ truncate: true });
+  await User.destroy({truncate: true});
 });
 
-afterAll(() => {
+afterAll(async () => {
+  await sequelize.close();
   server.close();
 });
 
@@ -554,6 +550,42 @@ describe('Error Object', () => {
     expect(response.body.timeStamp).toBeLessThan(fiveSecondsLater);
   });
 });
+
+// This is the block test for UserListing. I have no idea why can't I separate those file. 
+// const responseUserPaginationBlank: UserPagination = {
+//   content: [],
+//   page: 0,
+//   size: 10,
+//   totalPage: 0,
+// };
+
+// describe('Listing users', () => {
+//   test('returns 200 ok when there are no user in database', async () => {
+//     const response = await request(app).get('/api/1.0/users');
+//     expect(response.status).toBe(200);
+//   });
+
+//   test('returns page object as response body', async () => {
+//     const response = await request(app).get('/api/1.0/users');
+//     expect(response.body).toEqual(responseUserPaginationBlank);
+//   });
+
+//   test('returns 10 users in page content when there are 11 users in the database', async () => {
+//     for (let i=0; i < 11; i++) {
+//       const newUser: NewUser = {
+//         username: `user${i}`,
+//         email: `user${i}@gmail.com`,
+//         password: 'A4GuaN@SmZ',
+//       };
+    
+//       await User.create(newUser);
+//     }
+
+//     const response = await request(app).get('/api/1.0/users');
+//     expect(response.body.content.length).toBe(10);
+//   });
+
+// });
 
 //TO DO : Create a test for Error Handle
 // describe('UserHelperController', () => {
