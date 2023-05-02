@@ -4,15 +4,18 @@ import {
   NewUser,
   ResponseUserCreatedSuccess,
   UserDataFromDB,
-  ResponseUserValidationSuccess
+  ResponseUserValidationSuccess,
+  RequestWithPagination
 } from '../../models';
 
 import { 
   ErrorUserExists,
-  ErrorToken
+  ErrorToken,
+  ErrorUserNotFound
 } from '../../utils/Errors';
 
 import { Locales } from '../../utils';
+
 
 export class UserHelperController {
   public static async httpPostSignUp(
@@ -52,7 +55,6 @@ export class UserHelperController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-
     try {
       const token = req.params.token;
       const user = await UserHelperModel.findUserByToken(token);
@@ -70,8 +72,47 @@ export class UserHelperController {
       return;
     } catch(err) {
       next(err);
-      // UserHelperController.handleSignUpError(err, req, res);
       return;
     }
   }
+
+  public static async httpGetUsers(
+    req: RequestWithPagination,
+    res: Response,
+    next: NextFunction
+  ): Promise<void>{
+    try {
+      if (!req.pagination) {
+        throw new Error('Pagination is not set properly');
+      }
+      const { page, size } = req.pagination;
+      const users = await UserHelperModel.getAllActiveUser(page, size);
+      res.status(200).send(users);
+    } catch (err) {
+      next(err);
+      return;
+    }
+  }
+
+  public static async httpGetUserById(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+
+    try {
+      const id = Number(req.params.id);
+      const user = await UserHelperModel.getUserByID(id);
+      if (!user) {
+        throw new ErrorUserNotFound();
+      }
+
+      res.send(user);
+      return;
+    } catch (err) {
+      next(err);
+      return;
+    }  
+  }
+
 }

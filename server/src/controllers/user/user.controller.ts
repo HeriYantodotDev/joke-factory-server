@@ -1,18 +1,27 @@
-import { routerConfig, post, use } from '../../decorators';
+/* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
+import { routerConfig, post, get,  use } from '../../decorators';
 import { UserHelperController } from './user.helper.controller';
-import { bodyValidatorMW, signUpSchema, signUpValidationErrorGenerator } from '../../utils';
+import { bodyValidatorMW, 
+  signUpSchema, 
+  signUpValidationErrorGenerator,
+  paginationMW 
+} from '../../utils';
 
 const validationOption = {abortEarly: false};
 
 @routerConfig('/api/1.0/users')
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 class UserController {
   @post('/', UserHelperController.httpPostSignUp)
   @use(bodyValidatorMW(signUpSchema, signUpValidationErrorGenerator, validationOption))
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  handleSignUpRequest(): void {}
+  usersPost(): void {}
   
   @post('/token/:token', UserHelperController.httpActivateAccount )
-   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  handleActivation():void{}
+  usersTokenParams():void{}
+
+  @get('/', UserHelperController.httpGetUsers)
+  @use(paginationMW())
+  usersGet(): void {}
+
+  @get('/:id', UserHelperController.httpGetUserById)
+  userGetById(): void {}
 }

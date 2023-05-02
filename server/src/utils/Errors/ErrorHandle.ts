@@ -3,7 +3,8 @@ import {
   ErrorBodyValidation,
   ErrorSendEmailActivation,
   ErrorToken,
-  ErrorUserExists 
+  ErrorUserExists, 
+  ErrorUserNotFound
 } from './ErrorClass';
 import { ErrorResponse, ValidationErrorResponse } from '../../models';
 
@@ -27,7 +28,11 @@ export function ErrorHandle(err: unknown, req: Request, res: Response, next: Nex
     return;
   }
 
-  if (err instanceof ErrorSendEmailActivation || err instanceof ErrorToken){
+  if (
+    err instanceof ErrorSendEmailActivation || 
+    err instanceof ErrorToken || 
+    err instanceof ErrorUserNotFound
+  ){
     res.status(err.code).send(generateResponse(path, req.t(err.message)));
     return;
   }
@@ -46,6 +51,7 @@ function generateResponse(
   path: string, 
   message: string, 
   validationErrors?:ValidationErrorResponse['validationErrors']): ErrorResponse {
+
   const timeStamp = new Date().getTime();
   let responseFailed: ErrorResponse;
 

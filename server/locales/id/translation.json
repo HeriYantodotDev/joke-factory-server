@@ -16,5 +16,6 @@
   "emailFailure": "Gagal mengirimkan email",
   "tokenError": "Akun ini telah aktif, atau token tidak valid",
   "accountActivated": "Akun telah berhasil diaktifkan",
-  "validationFailure": "Kegagalan Validasi"
+  "validationFailure": "Kegagalan Validasi",
+  "userNotFound": "Pengguna tidak ditemukan"
 }

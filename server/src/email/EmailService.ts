@@ -18,6 +18,7 @@ export async function sendAccountActivation(user: User): Promise<void | Error> {
   });
 
   if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
     console.log(nodemailer.getTestMessageUrl(response));
   }
 

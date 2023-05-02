@@ -32,3 +32,10 @@ export class ErrorToken extends Error {
     super(message);
   }
 }
+
+export class ErrorUserNotFound extends Error {
+  public code = 404;
+  constructor(message = Locales.userNotFound) {
+    super(message);
+  }
+}

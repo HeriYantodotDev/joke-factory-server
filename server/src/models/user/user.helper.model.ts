@@ -1,5 +1,5 @@
 import { User } from './User.model';
-import { NewUser, UserDataFromDB } from './user.types';
+import { NewUser, UserDataFromDB, UserPagination } from './user.types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import {sendAccountActivation} from '../../email/EmailService'; 
@@ -73,4 +73,68 @@ export class UserHelperModel {
     });
     await user.save();
   }
+
+  public static async getAllActiveUser(page: number, size: number): Promise<UserPagination>{
+    const userList = await User.findAndCountAll({
+      where: { inactive: false },
+      attributes: ['id', 'username', 'email'],
+      limit: size,
+      offset: page * size,
+    });
+
+    const totalPages = UserHelperModel.getPageCount(userList.count, size);
+
+    return await UserHelperModel.generateResUserPagination(userList.rows, totalPages, page, size);
+  }
+
+  public static getPageCount(userCount: number, size: number): number {
+    return Math.ceil(userCount / size);
+  }
+
+  public static async generateResUserPagination(
+    userList: User[], 
+    totalPages: number, 
+    page: number,
+    size: number
+  ): Promise<UserPagination> {
+    return {
+      content: userList,
+      page,
+      size,
+      totalPages,
+    };
+  }
+
+  public static async addMultipleNewUsers(activeUserAccount: number, inactiveUserAccount = 0): Promise<User[]> {
+    const userList: User[] = [];
+    for (let i=0; i < (activeUserAccount+inactiveUserAccount); i++) {
+      const newUser: NewUser = {
+        username: `user${i+1}`,
+        email: `user${i+1}@gmail.com`,
+        password: 'A4GuaN@SmZ',
+        inactive: i >= activeUserAccount,
+      };
+      const user =  await User.create(newUser);
+      userList.push(user);
+    }
+    return userList;
+  }
+
+  public static async getUserByID(idParams: number): Promise<UserDataFromDB | null> {
+    const user = await User.findOne({
+      where: {
+        id: idParams,
+        inactive: false,
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const { id, username, email } = user;
+    return { id, username, email };
+  }
+
+
 }
