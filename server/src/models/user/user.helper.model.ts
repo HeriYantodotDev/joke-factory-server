@@ -49,13 +49,21 @@ export class UserHelperModel {
   }
 
   public static async userExistsByEmail(email: string): Promise<boolean> {
+    return !!(await UserHelperModel.findUserByEmail(email));
+  }
+
+  public static async findUserByEmail(email: string): Promise<User | null> {
     const user = await User.findOne({ where: { email: email } });
-    return !!user; 
+    return user;
   }
 
   public static async userExistsByUserName(username: string): Promise<boolean> {
+    return !!(await UserHelperModel.findUserByUserName(username));
+  }
+
+  public static async findUserByUserName(username: string): Promise<User | null> {
     const user = await User.findOne({ where: { username: username } });
-    return !!user; 
+    return user;
   }
 
   private static generateToken(length: number) {
@@ -107,11 +115,12 @@ export class UserHelperModel {
 
   public static async addMultipleNewUsers(activeUserAccount: number, inactiveUserAccount = 0): Promise<User[]> {
     const userList: User[] = [];
+    const password = await UserHelperModel.hashPassword('A4GuaN@SmZ');
     for (let i=0; i < (activeUserAccount+inactiveUserAccount); i++) {
       const newUser: NewUser = {
         username: `user${i+1}`,
         email: `user${i+1}@gmail.com`,
-        password: 'A4GuaN@SmZ',
+        password,
         inactive: i >= activeUserAccount,
       };
       const user =  await User.create(newUser);
@@ -135,6 +144,5 @@ export class UserHelperModel {
     const { id, username, email } = user;
     return { id, username, email };
   }
-
 
 }
