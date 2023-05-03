@@ -51,3 +51,13 @@ export interface RequestWithPagination extends Request {
     size: number,
   },
 }
+
+export interface CredentialBody {
+  email: string,
+  password: string,
+}
+
+export interface ResponseAfterSuccessfulAuth {
+  id: number,
+  username: string,
+}
