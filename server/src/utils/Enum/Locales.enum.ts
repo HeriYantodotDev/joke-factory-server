@@ -15,5 +15,7 @@ export enum Locales {
   userCreated = 'userCreated',
   emailFailure = 'emailFailure',
   validationFailure = 'validationFailure',
-  userNotFound = 'userNotFound'
+  userNotFound = 'userNotFound',
+  authFailure = 'authFailure',
+  inactiveAccount = 'inactiveAccount',
 }
