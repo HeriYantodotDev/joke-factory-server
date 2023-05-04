@@ -28,7 +28,6 @@ export function bodyValidatorMW(
     if (validationError) {
       const {message, validationErrors} = validationError;
       ErrorHandle(new ErrorBodyValidation(message, validationErrors), req, res, next);
-      // res.status(400).send(validationError);
       return;
     }
 

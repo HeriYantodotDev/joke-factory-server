@@ -23,6 +23,12 @@ const passwordUser1 = 'A4GuaN@SmZ';
 const randomPassword = 'JuJ*733H_SDsd@!';
 const API_URL_POST_AUTH = '/api/1.0/auth';
 
+interface bodyLogin {
+  [key: string]: string | boolean | undefined,
+  email: string,
+  password: string,
+}
+
 async function postAuthentication(credentials: CredentialBody, option: optionPostUser = {}) {
   const res = await request(app).post(API_URL_POST_AUTH).send(credentials);
 
@@ -39,7 +45,10 @@ async function postAuthentication(credentials: CredentialBody, option: optionPos
 }
 
 async function postAuthenticationManual(credentials = {}, option: optionPostUser = {}) {
-  const res = await request(app).post(API_URL_POST_AUTH).send(credentials);
+  const res = await request(app)
+    .post(API_URL_POST_AUTH)
+    .send(credentials)
+    .set('Accept-Language', option.language? option.language : 'en');
 
   if (!res.redirect) {
     return res;
@@ -160,21 +169,90 @@ describe('Authentication', () => {
     expect(response.body.message).toBe(message);
   });
 
-  test('returns 401 when e-mail is not valid', async() => {
+  test('returns 400 when e-mail is not valid', async() => {
     const response = await postAuthenticationManual({
       password: passwordUser1,
     });
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(400);
   }); 
 
-  test('returns 401 when password is not valid', async() => {
+  test('returns 400 when password is not valid', async() => {
     const response = await postAuthenticationManual({
       email: emailUser1,
     });
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(400);
   }); 
 
-  //todo use a validation when email is not in an email format and password is empty. 
+  test('returns proper error body when login body validation fails', async() => {
+    const credential: bodyLogin = {
+      email: '',
+      password: passwordUser1,
+    };
+    const response = await postAuthenticationManual(credential);
+    expect(Object.keys(response.body)).toEqual(['path', 'timeStamp', 'message', 'validationErrors']);
+  });
+
+  test.each`
+    language      | errorMessage
+    ${'en'}       | ${en.validationFailure}
+    ${'id'}       | ${id.validationFailure}
+  `('Return error message "$errorMessage" when login body validation fail & language "$language" is set',
+  async({language, errorMessage}) => {
+    const credential: bodyLogin = {
+      email: '',
+      password: passwordUser1,
+    };
+    const response = await postAuthenticationManual(credential, {language});
+    expect(response.body.message).toBe(errorMessage);
+  });
+
+  test.each`
+  field             | value                     | errorMessage
+  ${'email'}        | ${''}                     | ${en.errorEmailEmpty}
+  ${'email'}        | ${null}                   | ${en.errorEmailNull}
+  ${'email'}        | ${'email'}                | ${en.errorEmailInvalid}
+  ${'email'}        | ${'email@'}               | ${en.errorEmailInvalid}
+  ${'password'}     | ${''}                     | ${en.errorPasswordEmpty}
+  ${'password'}     | ${null}                   | ${en.errorPasswordNull}
+`('[.validationErrors]if $field is = "$value", $errorMessage is received', 
+  async({field, value, errorMessage}) => {
+
+    const credential: bodyLogin = {
+      email: emailUser1,
+      password: passwordUser1,
+    };
+
+    credential[field] = value;
+
+    const response = await postAuthenticationManual(credential,{language: 'en'} );
+
+    expect(response.body.validationErrors[field]).toBe(errorMessage);
+  });
+
+  test.each`
+  field             | value                     | errorMessage
+  ${'email'}        | ${''}                     | ${id.errorEmailEmpty}
+  ${'email'}        | ${null}                   | ${id.errorEmailNull}
+  ${'email'}        | ${'email'}                | ${id.errorEmailInvalid}
+  ${'email'}        | ${'email@'}               | ${id.errorEmailInvalid}
+  ${'password'}     | ${''}                     | ${id.errorPasswordEmpty}
+  ${'password'}     | ${null}                   | ${id.errorPasswordNull}
+`('[.validationErrors]if $field is = "$value", $errorMessage is received', 
+  async({field, value, errorMessage}) => {
+
+    const credential: bodyLogin = {
+      email: emailUser1,
+      password: passwordUser1,
+    };
+
+    credential[field] = value;
+
+    const response = await postAuthenticationManual(credential,{language: 'id'} );
+
+    expect(response.body.validationErrors[field]).toBe(errorMessage);
+  });
+
+
 });

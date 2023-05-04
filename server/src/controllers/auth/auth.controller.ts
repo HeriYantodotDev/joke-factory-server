@@ -3,7 +3,7 @@ import { routerConfig, post, get,  use } from '../../decorators';
 
 import { AuthHelperController } from './auth.helper.controller';
 
-import { authLocal, bodyValidatorMW
+import { authLocal, bodyValidatorMW, loginSchema, validationErrorGenerator
 } from '../../utils';
 import { RequestHandler } from 'express';
 
@@ -13,6 +13,7 @@ const validationOption = {abortEarly: false};
 class AuthController {
   @post('/', AuthHelperController.httpPostAuth as RequestHandler)
   @use(authLocal)
+  @use(bodyValidatorMW(loginSchema, validationErrorGenerator, validationOption))
   authPost(): void {}
   // @use(bodyValidatorMW(signUpSchema, signUpValidationErrorGenerator, validationOption))
 

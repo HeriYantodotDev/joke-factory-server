@@ -3,7 +3,7 @@ import { routerConfig, post, get,  use } from '../../decorators';
 import { UserHelperController } from './user.helper.controller';
 import { bodyValidatorMW, 
   signUpSchema, 
-  signUpValidationErrorGenerator,
+  validationErrorGenerator,
   paginationMW 
 } from '../../utils';
 
@@ -12,7 +12,7 @@ const validationOption = {abortEarly: false};
 @routerConfig('/api/1.0/users')
 class UserController {
   @post('/', UserHelperController.httpPostSignUp)
-  @use(bodyValidatorMW(signUpSchema, signUpValidationErrorGenerator, validationOption))
+  @use(bodyValidatorMW(signUpSchema, validationErrorGenerator, validationOption))
   usersPost(): void {}
   
   @post('/token/:token', UserHelperController.httpActivateAccount )
