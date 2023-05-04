@@ -122,7 +122,7 @@ export class UserHelperModel {
         email: `user${i+1}@gmail.com`,
         password,
         inactive: i >= activeUserAccount,
-      };
+    };
       const user =  await User.create(newUser);
       userList.push(user);
     }

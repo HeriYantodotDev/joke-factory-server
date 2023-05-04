@@ -39,3 +39,17 @@ export class ErrorUserNotFound extends Error {
     super(message);
   }
 }
+
+export class ErrorAuthFailed extends Error {
+  public code = 401;
+  constructor(message = Locales.authFailure) {
+    super(message);
+  }
+}
+
+export class ErrorAuthInactiveAccount extends Error {
+  public code = 403;
+  constructor(message = Locales.inactiveAccount) {
+    super(message);
+  }
+}

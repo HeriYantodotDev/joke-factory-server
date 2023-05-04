@@ -48,5 +48,7 @@ export function routerConfig(routePrefix: string): RouterConfigFunction{
         );
       }
     }
+
+    
   };
 }

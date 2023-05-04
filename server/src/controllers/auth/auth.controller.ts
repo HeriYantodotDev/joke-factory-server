@@ -3,15 +3,20 @@ import { routerConfig, post, get,  use } from '../../decorators';
 
 import { AuthHelperController } from './auth.helper.controller';
 
-import { bodyValidatorMW
+import { authLocal, bodyValidatorMW
 } from '../../utils';
+import { RequestHandler } from 'express';
 
 const validationOption = {abortEarly: false};
 
 @routerConfig('/api/1.0/auth')
 class AuthController {
-  @post('/', AuthHelperController.httpPostAuth)
+  @post('/', AuthHelperController.httpPostAuth as RequestHandler)
+  @use(authLocal)
   authPost(): void {}
   // @use(bodyValidatorMW(signUpSchema, signUpValidationErrorGenerator, validationOption))
+
+  @get('/localFailure', AuthHelperController.localAuthFailure)
+  localFailure(): void {}
   
 }

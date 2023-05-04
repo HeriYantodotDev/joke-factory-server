@@ -4,44 +4,8 @@ import { User, NewUser, UserHelperModel, ResponseUserCreatedSuccess } from '../m
 import { sequelize } from '../config/database';
 import { ErrorMessageInvalidJSON } from '../utils';
 import { SMTPServer } from 'smtp-server';
-
-enum messageTranslationEN {
-  errorPassword1 = 'Password must contain at least 1 uppercase, 1 lowercase, 1 symbol, and 1 number',
-  errorPassword2 = '"password" length must be at least 8 characters long',
-  errorUsernameEmpty = '"username" is not allowed to be empty',
-  errorEmailEmpty = '"email" is not allowed to be empty',
-  errorPasswordEmpty = '"password" is not allowed to be empty',
-  errorUsernameNull = '"username" must be a text',
-  errorEmailNull = '"email" must be a text',
-  errorPasswordNull = '"password" must be a text',
-  errorEmailInvalid = '"email" must be a valid email',
-  errorUserExist = 'already exists',
-  userCreated = 'User is created',
-  userSizeMin = '"username" must be at least 3 characters long',
-  userSizeMax = '"username" must not be longer than 30 characters long',
-  customFieldNotAllowed = 'Custom Field is not allowed',
-  emailFailure = 'Email Failure',
-  validationFailure = 'Validation Failure',
-}
-
-enum messageTranslationID {
-  errorPassword1 = 'Kata sandi harus mengandung 1 huruf besar, 1 huruf kecil, 1 simbol, & 1 angka',
-  errorPassword2 = 'panjang "kata sandi" minimal harus 8 karakter',
-  errorUsernameEmpty = '"nama pengguna" tidak boleh kosong',
-  errorEmailEmpty = '"email" tidak boleh kosong',
-  errorPasswordEmpty = '"kata sandi" tidak boleh kosong',
-  errorUsernameNull = '"nama pengguna" harus berupa text',
-  errorEmailNull = '"nama pengguna" harus berupa text',
-  errorPasswordNull = '"kata sandi" harus berupa text',
-  errorEmailInvalid = '"email" harus berupa email yang valid',
-  errorUserExist = 'sudah terdaftar',
-  userCreated = 'Akun pengguna telah dibuat',
-  userSizeMin = '"nama pengguna" minimal harus 3 karakter',
-  userSizeMax = '"nama pengguna" tidak boleh lebih dari 30 karakter',
-  customFieldNotAllowed = 'Field acak tidak diperbolehkan',
-  emailFailure = 'Gagal mengirimkan email',
-  validationFailure = 'Kegagalan Validasi',
-}
+import en from '../locales/en/translation.json';
+import id from '../locales/id/translation.json';
 
 export interface optionPostUser {
   language?: string,
@@ -179,10 +143,6 @@ afterAll(async () => {
 });
 
 describe('User Registration API', () => {
-  const {errorPassword1, errorPassword2, errorUsernameEmpty, errorEmailEmpty, errorPasswordEmpty,
-    errorUsernameNull, errorEmailNull, errorPasswordNull, errorEmailInvalid, errorUserExist,
-    userCreated, userSizeMin, userSizeMax, customFieldNotAllowed, emailFailure, validationFailure,
-  } = messageTranslationEN;
   
   test('returns 400 & error Message, when JSON Request is invalid', async () => {
     const response = await postInvalidJson();
@@ -244,7 +204,7 @@ describe('User Registration API', () => {
   test('returns Email failure when sending email fails', async () => {
     simulateSmtpFailure = true;
     const response = await postUser();
-    expect(response.body.message).toBe(emailFailure);
+    expect(response.body.message).toBe(en.emailFailure);
   });
 
   test('doesn\'t save user if activation email fails ', async () => {
@@ -256,7 +216,7 @@ describe('User Registration API', () => {
     expect(users.length).toBe(0);
   });
   //Internationalization1
-  test(`returns 200 +  message: ${userCreated} + save to database, when the sign up request is valid`, 
+  test(`returns 200 +  message: ${en.userCreated} + save to database, when the sign up request is valid`, 
     async () => {
       const response = await postUser();
       const userList = await User.findAll();
@@ -265,7 +225,7 @@ describe('User Registration API', () => {
       expect(response.status).toBe(200);
 
       expect(response.body).toStrictEqual(
-        generateResponseSuccessBodyValid(savedUser, userCreated)
+        generateResponseSuccessBodyValid(savedUser, en.userCreated)
       );
 
       expect(userList.length).toBe(1); //save database
@@ -278,41 +238,41 @@ describe('User Registration API', () => {
     expect(response.status).toBe(400);
   });
    //Internationalization6
-  test(`returns .message: ${validationFailure} in the body when validation fails`, async () => {
+  test(`returns .message: ${en.validationFailure} in the body when validation fails`, async () => {
     const response = await postUser({...bodyValid, username: null}, {language:'en'});
-    expect(response.body.message).toBe(validationFailure);
+    expect(response.body.message).toBe(en.validationFailure);
   });
   //Internationalization2
   test.each`
     field             | value                     | errorMessage
-    ${'username'}     | ${''}                     | ${errorUsernameEmpty}
-    ${'email'}        | ${''}                     | ${errorEmailEmpty}
-    ${'password'}     | ${''}                     | ${errorPasswordEmpty}
-    ${'username'}     | ${null}                   | ${errorUsernameNull}
-    ${'email'}        | ${null}                   | ${errorEmailNull}
-    ${'password'}     | ${null}                   | ${errorPasswordNull}
-    ${'password'}     | ${'password'}             | ${errorPassword1}
-    ${'password'}     | ${'password@123'}         | ${errorPassword1}
-    ${'password'}     | ${'823472734'}            | ${errorPassword1}
-    ${'password'}     | ${'P4S5WORDS'}            | ${errorPassword1}
-    ${'password'}     | ${'P1@a'}                 | ${errorPassword2}
-    ${'password'}     | ${'%^&*('}                | ${errorPassword2}
-    ${'password'}     | ${'Su&^;I4'}              | ${errorPassword2}
-    ${'email'}        | ${'email'}                | ${errorEmailInvalid}
-    ${'email'}        | ${'email@'}               | ${errorEmailInvalid}
-    ${'email'}        | ${'@yahoo'}               | ${errorEmailInvalid}
-    ${'email'}        | ${'email@yahoo'}          | ${errorEmailInvalid}
-    ${'email'}        | ${'email@yahoo..com'}     | ${errorEmailInvalid}
-    ${'email'}        | ${'email@@yahoo.com'}     | ${errorEmailInvalid}
-    ${'email'}        | ${'email@gmailcom'}       | ${errorEmailInvalid}
-    ${'email'}        | ${'emailgmailcom'}        | ${errorEmailInvalid}
-    ${'username'}     | ${'as'}                   | ${userSizeMin}
-    ${'username'}     | ${longUserName}           | ${userSizeMax}
-    ${'inactive'}     | ${true}                   | ${customFieldNotAllowed}
-    ${'asdf'}         | ${'asdf'}                 | ${customFieldNotAllowed}
+    ${'username'}     | ${''}                     | ${en.errorUsernameEmpty}
+    ${'email'}        | ${''}                     | ${en.errorEmailEmpty}
+    ${'password'}     | ${''}                     | ${en.errorPasswordEmpty}
+    ${'username'}     | ${null}                   | ${en.errorUsernameNull}
+    ${'email'}        | ${null}                   | ${en.errorEmailNull}
+    ${'password'}     | ${null}                   | ${en.errorPasswordNull}
+    ${'password'}     | ${'password'}             | ${en.errorPassword1}
+    ${'password'}     | ${'password@123'}         | ${en.errorPassword1}
+    ${'password'}     | ${'823472734'}            | ${en.errorPassword1}
+    ${'password'}     | ${'P4S5WORDS'}            | ${en.errorPassword1}
+    ${'password'}     | ${'P1@a'}                 | ${en.errorPassword2}
+    ${'password'}     | ${'%^&*('}                | ${en.errorPassword2}
+    ${'password'}     | ${'Su&^;I4'}              | ${en.errorPassword2}
+    ${'email'}        | ${'email'}                | ${en.errorEmailInvalid}
+    ${'email'}        | ${'email@'}               | ${en.errorEmailInvalid}
+    ${'email'}        | ${'@yahoo'}               | ${en.errorEmailInvalid}
+    ${'email'}        | ${'email@yahoo'}          | ${en.errorEmailInvalid}
+    ${'email'}        | ${'email@yahoo..com'}     | ${en.errorEmailInvalid}
+    ${'email'}        | ${'email@@yahoo.com'}     | ${en.errorEmailInvalid}
+    ${'email'}        | ${'email@gmailcom'}       | ${en.errorEmailInvalid}
+    ${'email'}        | ${'emailgmailcom'}        | ${en.errorEmailInvalid}
+    ${'username'}     | ${'as'}                   | ${en.userSizeMin}
+    ${'username'}     | ${longUserName}           | ${en.userSizeMax}
+    ${'inactive'}     | ${true}                   | ${en.customFieldNotAllowed}
+    ${'asdf'}         | ${'asdf'}                 | ${en.customFieldNotAllowed}
   `('[.validationErrors]if $field is = "$value", $errorMessage is received', 
   async({field, value, errorMessage}) => {
-    const expectedResponse = signUpFailedGenerator(field, errorMessage, validationFailure);
+    const expectedResponse = signUpFailedGenerator(field, errorMessage, en.validationFailure);
     const userModified: NewUser = {
       username: 'user1',
       email: 'user1@gmail.com',
@@ -332,7 +292,7 @@ describe('User Registration API', () => {
     await postUser(bodyValid);
     const response = await postUser(postBody);
 
-    const errorMessage = generateErrorUserExist(duplicatefield, postBody[duplicatefield], errorUserExist);
+    const errorMessage = generateErrorUserExist(duplicatefield, postBody[duplicatefield], en.errorUserExist);
     expect(response.status).toBe(400);
     expect(response.body.validationErrors[duplicatefield]).toBe(errorMessage);
   });
@@ -340,13 +300,8 @@ describe('User Registration API', () => {
 });
 
 describe('Internationalization', () => {
-  const {errorPassword1, errorPassword2, errorUsernameEmpty, errorEmailEmpty, errorPasswordEmpty,
-    errorUsernameNull, errorEmailNull, errorPasswordNull, errorEmailInvalid, errorUserExist,
-    userCreated, userSizeMin, userSizeMax, customFieldNotAllowed, emailFailure, validationFailure,
-  } = messageTranslationID;
-  
   //Internationalization1
-  test(`returns 200 + ${userCreated} + save to database, when the sign up request is valid`, 
+  test(`returns 200 + ${id.userCreated} + save to database, when the sign up request is valid`, 
   async () => {
     const response = await postUser(bodyValid, {language:'id'});
     const userList = await User.findAll();
@@ -355,7 +310,7 @@ describe('Internationalization', () => {
     expect(response.status).toBe(200);
 
     expect(response.body).toStrictEqual(
-      generateResponseSuccessBodyValid(savedUser, userCreated)
+      generateResponseSuccessBodyValid(savedUser, id.userCreated)
     );
 
     expect(userList.length).toBe(1);
@@ -365,34 +320,34 @@ describe('Internationalization', () => {
   //Internationalization2
   test.each`
     field             | value                     | errorMessage
-    ${'username'}     | ${''}                     | ${errorUsernameEmpty}
-    ${'email'}        | ${''}                     | ${errorEmailEmpty}
-    ${'password'}     | ${''}                     | ${errorPasswordEmpty}
-    ${'username'}     | ${null}                   | ${errorUsernameNull}
-    ${'email'}        | ${null}                   | ${errorEmailNull}
-    ${'password'}     | ${null}                   | ${errorPasswordNull}
-    ${'password'}     | ${'password'}             | ${errorPassword1}
-    ${'password'}     | ${'password@123'}         | ${errorPassword1}
-    ${'password'}     | ${'823472734'}            | ${errorPassword1}
-    ${'password'}     | ${'P4S5WORDS'}            | ${errorPassword1}
-    ${'password'}     | ${'P1@a'}                 | ${errorPassword2}
-    ${'password'}     | ${'%^&*('}                | ${errorPassword2}
-    ${'password'}     | ${'Su&^;I4'}              | ${errorPassword2}
-    ${'email'}        | ${'email'}                | ${errorEmailInvalid}
-    ${'email'}        | ${'email@'}               | ${errorEmailInvalid}
-    ${'email'}        | ${'@yahoo'}               | ${errorEmailInvalid}
-    ${'email'}        | ${'email@yahoo'}          | ${errorEmailInvalid}
-    ${'email'}        | ${'email@yahoo..com'}     | ${errorEmailInvalid}
-    ${'email'}        | ${'email@@yahoo.com'}     | ${errorEmailInvalid}
-    ${'email'}        | ${'email@gmailcom'}       | ${errorEmailInvalid}
-    ${'email'}        | ${'emailgmailcom'}        | ${errorEmailInvalid}
-    ${'username'}     | ${'as'}                   | ${userSizeMin}
-    ${'username'}     | ${longUserName}           | ${userSizeMax}
-    ${'inactive'}     | ${true}                   | ${customFieldNotAllowed}
-    ${'asdf'}         | ${'asdf'}                 | ${customFieldNotAllowed}
+    ${'username'}     | ${''}                     | ${id.errorUsernameEmpty}
+    ${'email'}        | ${''}                     | ${id.errorEmailEmpty}
+    ${'password'}     | ${''}                     | ${id.errorPasswordEmpty}
+    ${'username'}     | ${null}                   | ${id.errorUsernameNull}
+    ${'email'}        | ${null}                   | ${id.errorEmailNull}
+    ${'password'}     | ${null}                   | ${id.errorPasswordNull}
+    ${'password'}     | ${'password'}             | ${id.errorPassword1}
+    ${'password'}     | ${'password@123'}         | ${id.errorPassword1}
+    ${'password'}     | ${'823472734'}            | ${id.errorPassword1}
+    ${'password'}     | ${'P4S5WORDS'}            | ${id.errorPassword1}
+    ${'password'}     | ${'P1@a'}                 | ${id.errorPassword2}
+    ${'password'}     | ${'%^&*('}                | ${id.errorPassword2}
+    ${'password'}     | ${'Su&^;I4'}              | ${id.errorPassword2}
+    ${'email'}        | ${'email'}                | ${id.errorEmailInvalid}
+    ${'email'}        | ${'email@'}               | ${id.errorEmailInvalid}
+    ${'email'}        | ${'@yahoo'}               | ${id.errorEmailInvalid}
+    ${'email'}        | ${'email@yahoo'}          | ${id.errorEmailInvalid}
+    ${'email'}        | ${'email@yahoo..com'}     | ${id.errorEmailInvalid}
+    ${'email'}        | ${'email@@yahoo.com'}     | ${id.errorEmailInvalid}
+    ${'email'}        | ${'email@gmailcom'}       | ${id.errorEmailInvalid}
+    ${'email'}        | ${'emailgmailcom'}        | ${id.errorEmailInvalid}
+    ${'username'}     | ${'as'}                   | ${id.userSizeMin}
+    ${'username'}     | ${longUserName}           | ${id.userSizeMax}
+    ${'inactive'}     | ${true}                   | ${id.customFieldNotAllowed}
+    ${'asdf'}         | ${'asdf'}                 | ${id.customFieldNotAllowed}
   `('[.validationErrors]if $field is = "$value", $errorMessage is received', 
   async({field, value, errorMessage}) => {
-    const expectedResponse = signUpFailedGenerator(field, errorMessage, validationFailure);
+    const expectedResponse = signUpFailedGenerator(field, errorMessage, id.validationFailure);
     const userModified: NewUser = {
       username: 'user1',
       email: 'user1@gmail.com',
@@ -412,29 +367,24 @@ describe('Internationalization', () => {
     await postUser(bodyValid);
     const response = await postUser(postBody, {language: 'id'});
 
-    const errorMessage = generateErrorUserExist(duplicatefield, postBody[duplicatefield], errorUserExist);
+    const errorMessage = generateErrorUserExist(duplicatefield, postBody[duplicatefield], id.errorUserExist);
     expect(response.status).toBe(400);
     expect(response.body.validationErrors[duplicatefield]).toBe(errorMessage);
   });
   //Internationalization4
-  test(`returns "${emailFailure}" when sending email fails & language ID`, async () => {
+  test(`returns "${id.emailFailure}" when sending email fails & language ID`, async () => {
     simulateSmtpFailure = true;
     const response = await postUser(bodyValid, {language: 'id'});
-    expect(response.body.message).toBe(emailFailure);
+    expect(response.body.message).toBe(id.emailFailure);
   });
   //Internationalization6
-  test(`returns .message: ${validationFailure} in the body when validation fails, language; ID`, async () => {
+  test(`returns .message: ${id.validationFailure} in the body when validation fails, language; ID`, async () => {
     const response = await postUser({...bodyValid, username: null}, {language:'id'});
-    expect(response.body.message).toBe(validationFailure);
+    expect(response.body.message).toBe(id.validationFailure);
   });
 });
 
 describe('Activating account', () => {
-
-  const tokenErrorEN = 'This account is either active, or the token is invalid';
-  const tokenErrorID = 'Akun ini telah aktif, atau token tidak valid';
-  const accountActivatedEN = 'Account is activated';
-  const accountActivatedID = 'Akun telah berhasil diaktifkan';
 
   test('set the inactive properties to false if the token is correct', async () => {
     await postUser();
@@ -481,10 +431,10 @@ describe('Activating account', () => {
   //Internationalization
   test.each`
     language        | tokenStatus         | message
-    ${'en'}         | ${'wrong'}          | ${tokenErrorEN}
-    ${'id'}         | ${'wrong'}          | ${tokenErrorID}
-    ${'en'}         | ${'correct'}        | ${accountActivatedEN}
-    ${'id'}         | ${'correct'}        | ${accountActivatedID}
+    ${'en'}         | ${'wrong'}          | ${en.tokenError}
+    ${'id'}         | ${'wrong'}          | ${id.tokenError}
+    ${'en'}         | ${'correct'}        | ${en.accountActivated}
+    ${'id'}         | ${'correct'}        | ${id.accountActivated}
   `('if token is $tokenStatus & language $language, then "$message" is received',
   async({language, tokenStatus, message}) => {
     await postUser();
@@ -551,41 +501,6 @@ describe('Error Object', () => {
   });
 });
 
-// This is the block test for UserListing. I have no idea why can't I separate those file. 
-// const responseUserPaginationBlank: UserPagination = {
-//   content: [],
-//   page: 0,
-//   size: 10,
-//   totalPage: 0,
-// };
-
-// describe('Listing users', () => {
-//   test('returns 200 ok when there are no user in database', async () => {
-//     const response = await request(app).get('/api/1.0/users');
-//     expect(response.status).toBe(200);
-//   });
-
-//   test('returns page object as response body', async () => {
-//     const response = await request(app).get('/api/1.0/users');
-//     expect(response.body).toEqual(responseUserPaginationBlank);
-//   });
-
-//   test('returns 10 users in page content when there are 11 users in the database', async () => {
-//     for (let i=0; i < 11; i++) {
-//       const newUser: NewUser = {
-//         username: `user${i}`,
-//         email: `user${i}@gmail.com`,
-//         password: 'A4GuaN@SmZ',
-//       };
-    
-//       await User.create(newUser);
-//     }
-
-//     const response = await request(app).get('/api/1.0/users');
-//     expect(response.body.content.length).toBe(10);
-//   });
-
-// });
 
 //TO DO : Create a test for Error Handle
 // describe('UserHelperController', () => {

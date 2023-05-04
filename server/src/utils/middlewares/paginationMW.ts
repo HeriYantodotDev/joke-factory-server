@@ -1,17 +1,16 @@
-import { Response, NextFunction, RequestHandler} from 'express';
+import { Response, NextFunction} from 'express';
 import { RequestWithPagination } from '../../models';
 
 const MAX_SIZE = 10;
 
-export function paginationMW(): RequestHandler {
-  return function (
-    req: RequestWithPagination, 
-    res: Response, 
-    next: NextFunction): void {
-    req.pagination = settingPageAndSize(req);
-    next();
-  };
+export function paginationMW (
+  req: RequestWithPagination, 
+  res: Response, 
+  next: NextFunction): void {
+  req.pagination = settingPageAndSize(req);
+  next();
 }
+
 
 function settingPageAndSize(req: RequestWithPagination) {
   return {

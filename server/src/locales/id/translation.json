@@ -17,5 +17,7 @@
   "tokenError": "Akun ini telah aktif, atau token tidak valid",
   "accountActivated": "Akun telah berhasil diaktifkan",
   "validationFailure": "Kegagalan Validasi",
-  "userNotFound": "Pengguna tidak ditemukan"
+  "userNotFound": "Pengguna tidak ditemukan",
+  "authFailure": "Kredensial tidak valid",
+  "inactiveAccount": "Akun anda belum diaktifkan"
 }

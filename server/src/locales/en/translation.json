@@ -17,5 +17,7 @@
   "tokenError": "This account is either active, or the token is invalid",
   "accountActivated": "Account is activated",
   "validationFailure": "Validation Failure",
-  "userNotFound": "User not found"
+  "userNotFound": "User not found",
+  "authFailure": "Incorrect credential",
+  "inactiveAccount": "Account is inactive"
 }

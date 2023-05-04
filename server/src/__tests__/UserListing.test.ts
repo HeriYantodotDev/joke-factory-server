@@ -4,6 +4,9 @@ import { User, UserPagination, UserHelperModel} from '../models';
 import { sequelize } from '../config/database';
 import { optionPostUser } from './UserRegister.test';
 
+import en from '../locales/en/translation.json';
+import id from '../locales/id/translation.json';
+
 const addMultipleNewUsers = UserHelperModel.addMultipleNewUsers;
 const responseUserPaginationBlank: UserPagination = {
   content: [],
@@ -134,8 +137,8 @@ describe('Get User', () => {
 
   test.each`
   language      | message
-  ${'id'}       | ${'Pengguna tidak ditemukan'}
-  ${'en'}       | ${'User not found'}
+  ${'id'}       | ${id.userNotFound}
+  ${'en'}       | ${en.userNotFound}
   `('returns $message for unknown user when language is set to $language', async ({language, message}) => {
     const response = await getUserByID(5, {language});
     expect(response.body.message).toBe(message);
@@ -167,8 +170,5 @@ describe('Get User', () => {
     const response = await getUserByID(userList[0].id);
     expect(response.status).toBe(404);
   });
-
-
-
 
 });

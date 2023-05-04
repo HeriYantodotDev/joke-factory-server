@@ -4,7 +4,9 @@ import {
   ErrorSendEmailActivation,
   ErrorToken,
   ErrorUserExists, 
-  ErrorUserNotFound
+  ErrorUserNotFound,
+  ErrorAuthFailed,
+  ErrorAuthInactiveAccount
 } from './ErrorClass';
 import { ErrorResponse, ValidationErrorResponse } from '../../models';
 
@@ -31,7 +33,9 @@ export function ErrorHandle(err: unknown, req: Request, res: Response, next: Nex
   if (
     err instanceof ErrorSendEmailActivation || 
     err instanceof ErrorToken || 
-    err instanceof ErrorUserNotFound
+    err instanceof ErrorUserNotFound ||
+    err instanceof ErrorAuthFailed ||
+    err instanceof ErrorAuthInactiveAccount
   ){
     res.status(err.code).send(generateResponse(path, req.t(err.message)));
     return;

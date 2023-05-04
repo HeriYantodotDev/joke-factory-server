@@ -19,7 +19,7 @@ class UserController {
   usersTokenParams():void{}
 
   @get('/', UserHelperController.httpGetUsers)
-  @use(paginationMW())
+  @use(paginationMW)
   usersGet(): void {}
 
   @get('/:id', UserHelperController.httpGetUserById)
