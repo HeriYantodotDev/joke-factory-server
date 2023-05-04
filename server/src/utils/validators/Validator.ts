@@ -1,7 +1,8 @@
 import Joi from 'joi';
 import { NewUser } from '../../models';
-import { signUpSchema } from './signUpValidator';
+import { signUpSchema } from './signUpSchema';
 import { Locales } from '../Enum';
+import { loginSchema } from './loginSchema';
 
 export class Validator {
   private schema: Joi.ObjectSchema;
@@ -23,7 +24,10 @@ export class Validator {
     if (this.validationResult) {
       this.errorResult = this.validationResult.error;
 
-      if (JSON.stringify(this.schema) === JSON.stringify(signUpSchema)) {
+      if (
+        JSON.stringify(this.schema) === JSON.stringify(signUpSchema) || 
+        JSON.stringify(this.schema) === JSON.stringify(loginSchema)
+      ) {
         this.errorMessageResult = Locales.validationFailure;
       } else {
         this.errorMessageResult = this.errorResult?.details[0].message;

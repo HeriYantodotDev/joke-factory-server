@@ -1,2 +1,4 @@
 export * from './Validator';
-export * from './signUpValidator';
+export * from './signUpSchema';
+export * from './loginSchema';
+export * from './validationErrorGenerator';
