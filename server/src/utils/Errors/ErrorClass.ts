@@ -47,8 +47,9 @@ export class ErrorAuthFailed extends Error {
   }
 }
 
-export class ErrorAuthInactiveAccount extends Error {
+export class ErrorAuthForbidden extends Error {
   public code = 403;
+  //the default is for inactive account
   constructor(message = Locales.inactiveAccount) {
     super(message);
   }

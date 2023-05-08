@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
-import { routerConfig, post, get,  use } from '../../decorators';
+import { routerConfig, post, get, use, put } from '../../decorators';
 import { UserHelperController } from './user.helper.controller';
 import { bodyValidatorMW, 
   signUpSchema, 
   validationErrorGenerator,
-  paginationMW 
+  paginationMW,
+  basicAuthenticationMW,
+  userUpdateSchema
 } from '../../utils';
 
 const validationOption = {abortEarly: false};
@@ -19,9 +21,17 @@ class UserController {
   usersTokenParams():void{}
 
   @get('/', UserHelperController.httpGetUsers)
+  @use(basicAuthenticationMW)
   @use(paginationMW)
   usersGet(): void {}
 
   @get('/:id', UserHelperController.httpGetUserById)
   userGetById(): void {}
+
+  @put('/:id', UserHelperController.httpPutUserById )
+  @use(basicAuthenticationMW)
+  @use(bodyValidatorMW(userUpdateSchema, validationErrorGenerator, validationOption))
+  userPutById(): void {}
+
+
 }

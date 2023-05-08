@@ -9,6 +9,10 @@ import id from '../locales/id/translation.json';
 
 export interface optionPostUser {
   language?: string,
+  auth?: {
+    email?: string,
+    password?: string,
+  },
 }
 
 class ErrorSimulate extends Error {
@@ -128,7 +132,6 @@ beforeAll( async () => {
   });
 
   server.listen(8585, 'localhost');
-
 });
 
 beforeEach( async () => {

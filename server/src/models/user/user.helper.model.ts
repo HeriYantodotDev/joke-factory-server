@@ -1,10 +1,15 @@
 import { User } from './User.model';
-import { NewUser, UserDataFromDB, UserPagination } from './user.types';
+import { NewUser, 
+  UserDataFromDB, 
+  UserPagination
+} from './user.types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import {sendAccountActivation} from '../../email/EmailService'; 
 import { sequelize } from '../../config/database';
 import { ErrorSendEmailActivation } from '../../utils/Errors';
+import { ErrorUserNotFound } from '../../utils/Errors';
+import { Op, WhereOptions, InferAttributes } from 'sequelize';
 
 export class UserHelperModel {
   public static async createUser(newUser: NewUser): Promise<UserDataFromDB> {
@@ -82,29 +87,48 @@ export class UserHelperModel {
     await user.save();
   }
 
-  public static async getAllActiveUser(page: number, size: number): Promise<UserPagination>{
+  public static async getAllActiveUser(
+    page: number, 
+    size: number, 
+    authenticatedUser: User | undefined
+  ): Promise<UserPagination>{
+
+    const whereClause = UserHelperModel.whereClauseForGetAllActiveUser(authenticatedUser);
+
     const userList = await User.findAndCountAll({
-      where: { inactive: false },
+      where: whereClause,
       attributes: ['id', 'username', 'email'],
       limit: size,
       offset: page * size,
     });
 
-    const totalPages = UserHelperModel.getPageCount(userList.count, size);
+    const totalPages = UserHelperModel.getPageCount( userList.count, size);
 
-    return await UserHelperModel.generateResUserPagination(userList.rows, totalPages, page, size);
+    return UserHelperModel.generateResUserPagination(userList.rows, totalPages, page, size);
+  }
+
+  public static whereClauseForGetAllActiveUser(authenticatedUser: User | undefined) {
+    const  whereClause: WhereOptions<InferAttributes<User, { omit: never }>> | undefined = {
+      inactive: false,
+    };
+
+    if (authenticatedUser?.id !== undefined) {
+      whereClause.id = { [Op.not]: authenticatedUser.id };
+    }
+
+    return whereClause;
   }
 
   public static getPageCount(userCount: number, size: number): number {
     return Math.ceil(userCount / size);
   }
 
-  public static async generateResUserPagination(
+  public static generateResUserPagination(
     userList: User[], 
     totalPages: number, 
     page: number,
     size: number
-  ): Promise<UserPagination> {
+  ): UserPagination {
     return {
       content: userList,
       page,
@@ -129,13 +153,17 @@ export class UserHelperModel {
     return userList;
   }
 
-  public static async getUserByID(idParams: number): Promise<UserDataFromDB | null> {
-    const user = await User.findOne({
+  public static async getActiveUserByid(idParams: number): Promise<User | null> {
+    return await User.findOne({
       where: {
         id: idParams,
         inactive: false,
       },
     });
+  }
+
+  public static async getActiveUserByIDReturnIdUserEmailOnly(idParams: number): Promise<UserDataFromDB | null> {
+    const user = await UserHelperModel.getActiveUserByid(idParams);
 
     if (!user) {
       return null;
@@ -143,6 +171,20 @@ export class UserHelperModel {
 
     const { id, username, email } = user;
     return { id, username, email };
+  }
+
+  public static async updateUserNameByID(idParams: number, newUserName: string): Promise<void> {
+    const user = await this.getActiveUserByid(idParams);
+
+    if (!user) {
+      throw new ErrorUserNotFound();
+    }
+
+    user.set({
+      username: newUserName,
+    });
+
+    await user.save();
   }
 
 }

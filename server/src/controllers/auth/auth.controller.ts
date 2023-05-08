@@ -15,7 +15,6 @@ class AuthController {
   @use(authLocal)
   @use(bodyValidatorMW(loginSchema, validationErrorGenerator, validationOption))
   authPost(): void {}
-  // @use(bodyValidatorMW(signUpSchema, signUpValidationErrorGenerator, validationOption))
 
   @get('/localFailure', AuthHelperController.localAuthFailure)
   localFailure(): void {}
