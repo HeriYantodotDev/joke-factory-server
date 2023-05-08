@@ -19,5 +19,6 @@
   "validationFailure": "Kegagalan Validasi",
   "userNotFound": "Pengguna tidak ditemukan",
   "authFailure": "Kredensial tidak valid",
-  "inactiveAccount": "Akun anda belum diaktifkan"
+  "inactiveAccount": "Akun anda belum diaktifkan",
+  "unauthorizedUserUpdate": "Anda tidak diperbolehkan untuk melakukan pembaharuan pada pengguna"
 }

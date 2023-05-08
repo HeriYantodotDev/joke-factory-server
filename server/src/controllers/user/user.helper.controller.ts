@@ -5,13 +5,15 @@ import {
   ResponseUserCreatedSuccess,
   UserDataFromDB,
   ResponseUserValidationSuccess,
-  RequestWithPagination
+  RequestWithPagination,
+  RequestWithAuthenticatedUser
 } from '../../models';
 
 import { 
   ErrorUserExists,
   ErrorToken,
-  ErrorUserNotFound
+  ErrorUserNotFound,
+  ErrorAuthForbidden
 } from '../../utils/Errors';
 
 import { Locales } from '../../utils';
@@ -77,7 +79,7 @@ export class UserHelperController {
   }
 
   public static async httpGetUsers(
-    req: RequestWithPagination,
+    req: RequestWithPagination & RequestWithAuthenticatedUser,
     res: Response,
     next: NextFunction
   ): Promise<void>{
@@ -85,9 +87,12 @@ export class UserHelperController {
       if (!req.pagination) {
         throw new Error('Pagination is not set properly');
       }
+      const authenticatedUser = req.authenticatedUser || undefined;
       const { page, size } = req.pagination;
-      const users = await UserHelperModel.getAllActiveUser(page, size);
+      const users = await UserHelperModel.getAllActiveUser(page, size, authenticatedUser);
+
       res.status(200).send(users);
+      return;
     } catch (err) {
       next(err);
       return;
@@ -102,7 +107,7 @@ export class UserHelperController {
 
     try {
       const id = Number(req.params.id);
-      const user = await UserHelperModel.getUserByID(id);
+      const user = await UserHelperModel.getActiveUserByIDReturnIdUserEmailOnly(id);
       if (!user) {
         throw new ErrorUserNotFound();
       }
@@ -113,6 +118,29 @@ export class UserHelperController {
       next(err);
       return;
     }  
+  }
+
+  public static async httpPutUserById(
+    req: RequestWithAuthenticatedUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const authenticatedUser = req.authenticatedUser;
+      const newUserName = req.body.username;
+      const id = Number(req.params.id);
+
+      if ( !authenticatedUser || authenticatedUser.id !== id) {
+        throw new ErrorAuthForbidden(Locales.unauthorizedUserUpdate);
+      }
+
+      await UserHelperModel.updateUserNameByID(id, newUserName);
+      res.send();
+    }
+
+    catch(err) {
+      next(err);
+    }
   }
 
 }

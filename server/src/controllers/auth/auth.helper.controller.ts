@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ResponseAfterSuccessfulAuth, User} from '../../models';
-import { ErrorAuthFailed, ErrorAuthInactiveAccount } from '../../utils';
+import { ErrorAuthFailed, ErrorAuthForbidden } from '../../utils';
 
 export class AuthHelperController { 
   public static async httpPostAuth(
@@ -35,7 +35,7 @@ export class AuthHelperController {
   ): Promise<void> {
 
     if (req.flash('error')[0] === 'inactive') {
-      next(new ErrorAuthInactiveAccount());
+      next(new ErrorAuthForbidden());
       return;
     }
   

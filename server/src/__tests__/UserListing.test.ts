@@ -15,8 +15,24 @@ const responseUserPaginationBlank: UserPagination = {
   totalPages: 0,
 };
 
-async function getUser (page = 0) {
-  return await request(app).get('/api/1.0/users').query({page});
+const emailUser1 = 'user1@gmail.com';
+const passwordUser1 = 'A4GuaN@SmZ';
+
+interface optionAuth {
+  auth?: {
+    email: string,
+    password: string,
+  },
+}
+
+async function getUser (page = 0, options: optionAuth = {} ) {
+  const agent = request(app).get('/api/1.0/users').query({page});
+  if (options.auth) {
+    const {email, password} = options.auth;
+    agent.auth(email, password);
+
+  }
+  return await agent;
 }
 
 async function getUserWithSize (size = 10) {
@@ -127,6 +143,17 @@ describe('Listing users', () => {
     expect(response.body.size).toBe(10);
     expect(response.body.page).toBe(0);
   });
+
+  test('returns user page without logged-in user when request has valid authorization', async() => {
+    await addMultipleNewUsers(11);
+    const response = await getUser(0, {
+    auth: {email: emailUser1,
+      password: passwordUser1,
+    },
+    });
+    expect(response.body.totalPages).toBe(1);
+  });
+
 });
 
 describe('Get User', () => {

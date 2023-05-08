@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { User } from './User.model';
 
 export interface NewUser {
   [key: string]: string | boolean | undefined,
@@ -50,6 +51,10 @@ export interface RequestWithPagination extends Request {
     page: number,
     size: number,
   },
+}
+
+export interface RequestWithAuthenticatedUser extends Request {
+  authenticatedUser?: User | undefined,
 }
 
 export interface CredentialBody {
