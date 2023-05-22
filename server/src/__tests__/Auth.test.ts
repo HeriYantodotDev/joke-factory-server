@@ -104,12 +104,12 @@ describe('Authentication', () => {
     expect(response.status).toBe(200);
   });
 
-  test('returns only user id and user name when login success', async() => {
+  test('returns only user id, user name and token when login success', async() => {
     const user = await UserHelperModel.addMultipleNewUsers(1);
     const response = await postAuthenticationUser1();
     expect(response.body.id).toBe(user[0].id);
     expect(response.body.username).toBe(user[0].username);
-    expect(Object.keys(response.body)).toEqual(['id', 'username']);
+    expect(Object.keys(response.body)).toEqual(['id', 'username', 'token']);
   });
 
   test('returns 401 when user doesn\'t exist', async() => {
@@ -198,7 +198,7 @@ describe('Authentication', () => {
     language      | errorMessage
     ${'en'}       | ${en.validationFailure}
     ${'id'}       | ${id.validationFailure}
-  `('Return error message "$errorMessage" when login body validation fail & language "$language" is set',
+  `('returns error message "$errorMessage" when login body validation fail & language "$language" is set',
   async({language, errorMessage}) => {
     const credential: bodyLogin = {
       email: '',
@@ -252,6 +252,12 @@ describe('Authentication', () => {
     const response = await postAuthenticationManual(credential,{language: 'id'} );
 
     expect(response.body.validationErrors[field]).toBe(errorMessage);
+  });
+
+  test('returns token in response body when credentials are correct', async() => {
+    await UserHelperModel.addMultipleNewUsers(1);
+    const response = await postAuthenticationUser1();
+    expect(response.body.token).not.toBeUndefined();
   });
 
 
