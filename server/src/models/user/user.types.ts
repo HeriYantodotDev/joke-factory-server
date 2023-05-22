@@ -65,4 +65,5 @@ export interface CredentialBody {
 export interface ResponseAfterSuccessfulAuth {
   id: number,
   username: string,
+  token: string,
 }
