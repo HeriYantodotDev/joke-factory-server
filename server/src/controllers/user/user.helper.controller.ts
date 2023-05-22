@@ -129,7 +129,6 @@ export class UserHelperController {
       const authenticatedUser = req.authenticatedUser;
       const newUserName = req.body.username;
       const id = Number(req.params.id);
-
       if ( !authenticatedUser || authenticatedUser.id !== id) {
         throw new ErrorAuthForbidden(Locales.unauthorizedUserUpdate);
       }

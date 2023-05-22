@@ -1,7 +1,8 @@
 import { User } from './User.model';
 import { NewUser, 
   UserDataFromDB, 
-  UserPagination
+  UserPagination,
+  UserWithIDOnly
 } from './user.types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -90,7 +91,7 @@ export class UserHelperModel {
   public static async getAllActiveUser(
     page: number, 
     size: number, 
-    authenticatedUser: User | undefined
+    authenticatedUser: User | UserWithIDOnly | undefined
   ): Promise<UserPagination>{
 
     const whereClause = UserHelperModel.whereClauseForGetAllActiveUser(authenticatedUser);
@@ -107,7 +108,7 @@ export class UserHelperModel {
     return UserHelperModel.generateResUserPagination(userList.rows, totalPages, page, size);
   }
 
-  public static whereClauseForGetAllActiveUser(authenticatedUser: User | undefined) {
+  public static whereClauseForGetAllActiveUser(authenticatedUser: User | UserWithIDOnly | undefined) {
     const  whereClause: WhereOptions<InferAttributes<User, { omit: never }>> | undefined = {
       inactive: false,
     };

@@ -13,6 +13,7 @@ export interface optionPostUser {
     email?: string,
     password?: string,
   },
+  token?: string,
 }
 
 class ErrorSimulate extends Error {
