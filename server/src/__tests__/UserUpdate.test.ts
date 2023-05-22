@@ -29,18 +29,29 @@ async function putUser(
   body: string | object | undefined = validUpdate, 
   options: optionPostUser = {}
 ){
-  const agent = request(app).put(`/api/1.0/users/${id}`);
+
+  const agent = request(app);
+  let token: string | undefined = undefined;
+
+  if (options.auth) {
+    const response = await agent.post('/api/1.0/auth').send(options.auth);
+    token = response.body.token;
+  }
+
+  const agent2 = request(app).put(`/api/1.0/users/${id}`);
   if (options.language) {
-    agent.set('Accept-Language', options.language);
+    agent2.set('Accept-Language', options.language);
   }
 
-  const { email, password } = options.auth || {};
-
-  if (email && password) {
-    agent.auth(email, password);
+  if (token) {
+    agent2.set('Authorization', `Bearer ${token}`);
   }
 
-  return await agent.send(body);
+  if (options.token) {
+    agent2.set('Authorization', `Bearer ${options.token}`);
+  }
+
+  return await agent2.send(body);
 }
 
 describe('User Update', () => {
@@ -115,7 +126,7 @@ describe('User Update', () => {
 
   });
 
-  test('Updates username in the database when valid update request sent', async() => {
+  test('updates username in the database when valid update request sent', async() => {
     const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
     const validUpdate = { username: 'user1-updated' };
     await putUser(
@@ -131,7 +142,7 @@ describe('User Update', () => {
     expect(updatedUser?.username).toBe(validUpdate.username);
   });
 
-  test('Returns status 400 + validationErrors Message when the request Body is invalid', async() => {
+  test('returns status 400 + validationErrors Message when the request Body is invalid', async() => {
     const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
     const response = await putUser(
       userList[0].id, 
@@ -144,5 +155,12 @@ describe('User Update', () => {
     expect(response.status).toBe(400);
     expect(response.body.validationErrors.username).toBe(en.errorUsernameEmpty);
   });
+
+  test('returns 403 when token is not valid', async() => {
+    const response = await putUser(5, validUpdate, {token: '123'});
+    expect(response.status).toBe(403);
+  });
+
+
 
 });

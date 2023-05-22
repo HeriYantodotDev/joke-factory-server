@@ -23,16 +23,28 @@ interface optionAuth {
     email: string,
     password: string,
   },
+  token?: string,
 }
 
 async function getUser (page = 0, options: optionAuth = {} ) {
   const agent = request(app).get('/api/1.0/users').query({page});
-  if (options.auth) {
-    const {email, password} = options.auth;
-    agent.auth(email, password);
 
+  if (options.token) {
+    agent.set('Authorization', `Bearer ${options.token}`);
   }
+
   return await agent;
+}
+
+async function auth(options: optionAuth){
+  let token: string | undefined = undefined;
+
+  if (options.auth) {
+    const response = await request(app).post('/api/1.0/auth').send(options.auth);
+    token = response.body.token;
+  }
+
+  return token;
 }
 
 async function getUserWithSize (size = 10) {
@@ -146,10 +158,18 @@ describe('Listing users', () => {
 
   test('returns user page without logged-in user when request has valid authorization', async() => {
     await addMultipleNewUsers(11);
+    const token = await auth({
+      auth: {
+        email: emailUser1,
+        password: passwordUser1,
+      },
+    });
+
     const response = await getUser(0, {
     auth: {email: emailUser1,
       password: passwordUser1,
     },
+    token,
     });
     expect(response.body.totalPages).toBe(1);
   });

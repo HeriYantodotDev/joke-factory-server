@@ -6,7 +6,8 @@ import { bodyValidatorMW,
   validationErrorGenerator,
   paginationMW,
   basicAuthenticationMW,
-  userUpdateSchema
+  userUpdateSchema,
+  tokenAuthenticationMW
 } from '../../utils';
 
 const validationOption = {abortEarly: false};
@@ -21,7 +22,7 @@ class UserController {
   usersTokenParams():void{}
 
   @get('/', UserHelperController.httpGetUsers)
-  @use(basicAuthenticationMW)
+  @use(tokenAuthenticationMW)
   @use(paginationMW)
   usersGet(): void {}
 
@@ -29,9 +30,7 @@ class UserController {
   userGetById(): void {}
 
   @put('/:id', UserHelperController.httpPutUserById )
-  @use(basicAuthenticationMW)
+  @use(tokenAuthenticationMW)
   @use(bodyValidatorMW(userUpdateSchema, validationErrorGenerator, validationOption))
   userPutById(): void {}
-
-
 }
