@@ -8,9 +8,10 @@ if (!process.env.jwtkey) {
 
 const jwtKey = process.env.jwtkey;
 
-export function createJWTToken(id: number) {
+export function generateJWTToken(id: number) {
   return jwt.sign(
     {id},
-    jwtKey
+    jwtKey,
+    {expiresIn: '2d'}
   );
 }

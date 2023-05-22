@@ -1,3 +1,2 @@
-export * from './user/User.model';
-export * from './user/user.helper.model';
-export * from './user/user.types';
+export * from './user';
+export * from './auth';

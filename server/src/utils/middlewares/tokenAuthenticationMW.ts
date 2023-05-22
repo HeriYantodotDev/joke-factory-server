@@ -1,6 +1,6 @@
-import { RequestWithAuthenticatedUser, UserWithIDOnly } from '../../models';
+import { RequestWithAuthenticatedUser} from '../../models';
 import { Response, NextFunction } from 'express';
-import { verifyJWTToken } from '../tokenService';
+import { AuthHelperModel } from '../../models';
 
 export async function tokenAuthenticationMW(
   req: RequestWithAuthenticatedUser,
@@ -14,9 +14,9 @@ export async function tokenAuthenticationMW(
   if (authorization) {
     const token = authorization.substring(7);
     try {
-      const user = verifyJWTToken(token);
+      const user = await AuthHelperModel.verifyOpaqueToken(token);
       if (user) {
-        req.authenticatedUser = user as UserWithIDOnly;
+        req.authenticatedUser = user;
       }
     // eslint-disable-next-line no-empty
     } catch (error) {

@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { app } from '../app';
-import { User, UserHelperModel } from '../models';
+import { User, Auth, UserHelperModel } from '../models';
 import { optionPostUser } from './UserRegister.test';
 import { sequelize } from '../config/database';
 import en from '../locales/en/translation.json';
@@ -18,6 +18,7 @@ beforeAll( async () => {
 
 beforeEach( async () => {
   await User.destroy({truncate: true});
+  await Auth.destroy({truncate: true});
 });
 
 afterAll(async () => {

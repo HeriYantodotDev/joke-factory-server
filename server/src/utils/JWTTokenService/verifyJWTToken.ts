@@ -8,6 +8,6 @@ if (!process.env.jwtkey) {
 
 const jwtKey = process.env.jwtkey;
 
-export function verifyJWTToken(token: string) {
+export function verifyTheJWTToken(token: string) {
   return jwt.verify(token, jwtKey);
 }
