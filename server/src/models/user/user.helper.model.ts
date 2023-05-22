@@ -5,12 +5,12 @@ import { NewUser,
   UserWithIDOnly
 } from './user.types';
 import bcrypt from 'bcrypt';
-import crypto from 'crypto';
 import {sendAccountActivation} from '../../email/EmailService'; 
 import { sequelize } from '../../config/database';
 import { ErrorSendEmailActivation } from '../../utils/Errors';
 import { ErrorUserNotFound } from '../../utils/Errors';
 import { Op, WhereOptions, InferAttributes } from 'sequelize';
+import { AuthHelperModel } from '../auth';
 
 export class UserHelperModel {
   public static async createUser(newUser: NewUser): Promise<UserDataFromDB> {
@@ -45,7 +45,7 @@ export class UserHelperModel {
   }
 
   private static createUserWithHashAndToken(userWithhash: NewUser): NewUser{
-    return { ...userWithhash, activationToken: UserHelperModel.generateToken(16) };
+    return { ...userWithhash, activationToken: AuthHelperModel.randomString(16) };
   }
 
   private static async hashPassword(plainTextPass: string): Promise<string> {
@@ -70,10 +70,6 @@ export class UserHelperModel {
   public static async findUserByUserName(username: string): Promise<User | null> {
     const user = await User.findOne({ where: { username: username } });
     return user;
-  }
-
-  private static generateToken(length: number) {
-    return crypto.randomBytes(length).toString('hex').substring(0, length);
   }
 
   public static async findUserByToken(token: string): Promise<User | null> {

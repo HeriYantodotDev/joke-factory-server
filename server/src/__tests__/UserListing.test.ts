@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { app } from '../app';
-import { User, UserPagination, UserHelperModel} from '../models';
+import { User, Auth, UserPagination, UserHelperModel} from '../models';
 import { sequelize } from '../config/database';
 import { optionPostUser } from './UserRegister.test';
 
@@ -60,13 +60,13 @@ async function getUserByID(id = 5, option: optionPostUser = {}) {
   return await agent;
 }
 
-
 beforeAll( async () => {
   await sequelize.sync();
 });
 
 beforeEach( async () => {
   await User.destroy({truncate: true});
+  await Auth.destroy({truncate: true});
 });
 
 afterAll(async () => {
@@ -165,12 +165,7 @@ describe('Listing users', () => {
       },
     });
 
-    const response = await getUser(0, {
-    auth: {email: emailUser1,
-      password: passwordUser1,
-    },
-    token,
-    });
+    const response = await getUser(0, {token});
     expect(response.body.totalPages).toBe(1);
   });
 

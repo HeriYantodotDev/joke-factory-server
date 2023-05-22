@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ResponseAfterSuccessfulAuth, User} from '../../models';
 import { ErrorAuthFailed, ErrorAuthForbidden } from '../../utils';
-import { createJWTToken } from '../../utils/';
+import { AuthHelperModel } from '../../models';
 
 export class AuthHelperController { 
   public static async httpPostAuth(
@@ -16,8 +16,8 @@ export class AuthHelperController {
         return;
       }
 
-      const token = createJWTToken(req.user.id);
-  
+      const token = await AuthHelperModel.createOpaqueToken(req.user.id);
+      
       const response: ResponseAfterSuccessfulAuth = {
         id: req.user.id,
         username: req.user.username,
