@@ -8,7 +8,6 @@ export async function tokenAuthenticationMW(
   next: NextFunction
 ): Promise<void> {
 
-
   const authorization = req.headers.authorization;
   
   if (authorization) {

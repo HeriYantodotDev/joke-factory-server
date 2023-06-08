@@ -184,4 +184,13 @@ export class UserHelperModel {
     await user.save();
   }
 
+  public static async deleteUserByID(idParams: number) {
+    const user = await this.getActiveUserByid(idParams);
+
+    if (!user) {
+      throw new ErrorUserNotFound();
+    }
+
+    user.destroy();
+  }
 }
