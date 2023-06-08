@@ -22,4 +22,8 @@ export class AuthHelperModel {
 
     return {id: userID};
   }
+
+  public static async deleteOpaqueToken(token: string){
+    await Auth.destroy({where: {token}});
+  }
 }

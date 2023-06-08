@@ -18,5 +18,10 @@ class AuthController {
 
   @get('/localFailure', AuthHelperController.localAuthFailure)
   localFailure(): void {}
-  
+}
+
+@routerConfig('/api/1.0/logout')
+class AuthLogout {
+  @post('/', AuthHelperController.httpLogout)
+  logout(): void {}
 }
