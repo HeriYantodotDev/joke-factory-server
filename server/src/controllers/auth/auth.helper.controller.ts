@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { ResponseAfterSuccessfulAuth, User} from '../../models';
+import { ResponseAfterSuccessfulAuth, User, AuthHelperModel} from '../../models';
 import { ErrorAuthFailed, ErrorAuthForbidden } from '../../utils';
-import { AuthHelperModel } from '../../models';
 
 export class AuthHelperController { 
   public static async httpPostAuth(
@@ -46,5 +45,16 @@ export class AuthHelperController {
     next(new ErrorAuthFailed());
     return;
   }
-  
+
+  public static async httpLogout(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    const authorization = req.headers.authorization;
+    if (authorization) {
+      const token = authorization.substring(7);
+      await AuthHelperModel.deleteOpaqueToken(token);
+    }
+    res.send();
+  }
 }

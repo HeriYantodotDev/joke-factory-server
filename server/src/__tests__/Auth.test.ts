@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { app } from '../app';
-import { User, UserHelperModel, CredentialBody } from '../models';
+import { User, Auth, UserHelperModel, CredentialBody } from '../models';
 import { sequelize } from '../config/database';
 import { optionPostUser } from './UserRegister.test';
 import en from '../locales/en/translation.json';
@@ -12,6 +12,7 @@ beforeAll( async () => {
 
 beforeEach( async () => {
   await User.destroy({truncate: true});
+  await Auth.destroy({truncate: true});
 });
 
 afterAll(async () => {
@@ -27,6 +28,10 @@ interface bodyLogin {
   [key: string]: string | boolean | undefined,
   email: string,
   password: string,
+}
+
+interface postLogoutOption {
+  token?: string,
 }
 
 async function postAuthentication(credentials: CredentialBody, option: optionPostUser = {}) {
@@ -94,6 +99,14 @@ async function postAuthenticationWrongPassword(option: optionPostUser = {}) {
     email: emailUser1,
     password: randomPassword,
   });
+}
+
+async function postLogout(options: postLogoutOption = {}) {
+  const agent = request(app).post('/api/1.0/logout');
+  if (options.token) {
+    agent.set('Authorization', `Bearer ${options.token}`);
+  }
+  return await agent.send();
 }
 
 describe('Authentication', () => {
@@ -258,6 +271,22 @@ describe('Authentication', () => {
     await UserHelperModel.addMultipleNewUsers(1);
     const response = await postAuthenticationUser1();
     expect(response.body.token).not.toBeUndefined();
+  });
+});
+
+describe('Logout', () => {
+  test('returns 200 ok when unauthorized request send for logout', async() => {
+    const response = await postLogout();
+    expect(response.status).toBe(200);
+  });
+
+  test('removes the token from database', async () => {
+    await UserHelperModel.addMultipleNewUsers(1);
+    const response = await postAuthenticationUser1();
+    const token = response.body.token;
+    await postLogout({token});
+    const storedToken = await Auth.findOne({where: {token: token}});
+    expect(storedToken).toBeNull();
   });
 
 
