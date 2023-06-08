@@ -142,4 +142,29 @@ export class UserHelperController {
     }
   }
 
+  public static async httpDeleteUserById(
+    req: RequestWithAuthenticatedUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const authenticatedUser = req.authenticatedUser;
+      const id = Number(req.params.id);
+
+      if (!authenticatedUser || authenticatedUser.id !== id ) {
+        throw new ErrorAuthForbidden(Locales.unauthorizedUserDelete);
+      }
+
+      await UserHelperModel.deleteUserByID(id);
+
+      res.send();
+    }
+
+    catch(err) {
+      next(err);
+    }
+  }
+
+
+
 }

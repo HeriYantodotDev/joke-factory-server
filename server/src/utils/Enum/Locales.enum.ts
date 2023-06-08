@@ -18,5 +18,7 @@ export enum Locales {
   userNotFound = 'userNotFound',
   authFailure = 'authFailure',
   inactiveAccount = 'inactiveAccount',
-  unauthorizedUserUpdate = 'unauthorizedUserUpdate'
+  unauthorizedUserUpdate = 'unauthorizedUserUpdate',
+  unauthorizedUserDelete = 'unauthorizedUserDelete',
+
 }

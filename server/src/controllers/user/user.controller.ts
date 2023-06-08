@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
-import { routerConfig, post, get, use, put } from '../../decorators';
+import { routerConfig, post, get, use, put, del } from '../../decorators';
 import { UserHelperController } from './user.helper.controller';
 import { bodyValidatorMW, 
   signUpSchema, 
@@ -33,4 +33,8 @@ class UserController {
   @use(tokenAuthenticationMW)
   @use(bodyValidatorMW(userUpdateSchema, validationErrorGenerator, validationOption))
   userPutById(): void {}
+
+  @del('/:id', UserHelperController.httpDeleteUserById)
+  @use(tokenAuthenticationMW)
+  userDeleteById(): void{}
 }
