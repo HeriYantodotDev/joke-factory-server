@@ -191,6 +191,6 @@ export class UserHelperModel {
       throw new ErrorUserNotFound();
     }
 
-    user.destroy();
+    await user.destroy();
   }
 }

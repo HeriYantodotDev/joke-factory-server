@@ -8,6 +8,8 @@ import {
 
 import { sequelize } from '../../config/database';
 
+import { Auth } from '../auth';
+
 export class User extends Model<
   InferAttributes<User>,
   InferCreationAttributes<User>
@@ -51,6 +53,11 @@ User.init(
     modelName: 'user',
   }
 );
+
+User.hasMany(Auth, {
+  onDelete: 'cascade',
+  foreignKey: 'userID',
+});
 
 // (sequelize) Warning: SQLite does not support 'INTEGER' 
 // with UNSIGNED 

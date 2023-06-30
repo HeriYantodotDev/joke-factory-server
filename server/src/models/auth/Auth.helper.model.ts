@@ -12,6 +12,7 @@ export class AuthHelperModel {
       token,
       userID: id,
     });
+    
 
     return token;
   }
@@ -23,7 +24,12 @@ export class AuthHelperModel {
     return {id: userID};
   }
 
+  public static async findOpaqueToken(token: string) {
+    return await Auth.findOne({where: {token}});
+  }
+
   public static async deleteOpaqueToken(token: string){
     await Auth.destroy({where: {token}});
   }
+
 }
