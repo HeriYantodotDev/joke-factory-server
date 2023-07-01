@@ -16,7 +16,7 @@
     "test:single": "NODE_ENV=test jest --runInBand",
     "test:single:coverage": "NODE_ENV=test jest --coverage --runInBand",
     "test:single:watch": "NODE_ENV=test jest --watchAll --runInBand",
-    "test:one": "jest --testPathPattern=UserDelete.test.ts",
+    "test:one": "jest --testPathPattern=Auth.test.ts",
     "test:watch": "NODE_ENV=test jest --watchAll",
     "test:coverage": "NODE_ENV=test jest --coverage",
     "lint": "eslint .",

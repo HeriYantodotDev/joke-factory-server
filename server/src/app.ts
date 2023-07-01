@@ -23,6 +23,8 @@ import session from 'express-session';
 
 import flash from 'connect-flash';
 
+import { tokenAuthenticationMW } from './utils';
+
 export const app = express();
 
 const LOCAL_OPTIONS = {
@@ -33,6 +35,7 @@ const LOCAL_OPTIONS = {
 class startupMiddleware {
   static configMiddleware(): void {
     this.configBodyParser();
+    this.configTokenMW();
     this.configi18Next();
     this.configPassport();
     this.enableSession();
@@ -44,6 +47,10 @@ class startupMiddleware {
     app.use(express.urlencoded({ extended: false }));
     app.use(express.json());
     app.use(checkingJSONRequest());
+  }
+
+  private static configTokenMW(): void {
+    app.use(tokenAuthenticationMW);
   }
 
   private static configi18Next(): void {

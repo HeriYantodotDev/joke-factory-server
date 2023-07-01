@@ -16,6 +16,7 @@ export class Auth extends Model<
   declare id: CreationOptional<number>;
   declare token: string;
   declare userID: ForeignKey<number>;
+  declare lastUsedAt: CreationOptional<Date>; 
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -32,6 +33,9 @@ Auth.init(
     },
     userID: {
       type: DataTypes.INTEGER,
+    },
+    lastUsedAt: {
+      type: DataTypes.DATE,
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
