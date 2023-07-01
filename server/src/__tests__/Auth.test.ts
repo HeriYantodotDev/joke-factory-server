@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { app } from '../app';
-import { User, Auth, UserHelperModel, CredentialBody } from '../models';
+import { User, Auth, UserHelperModel, CredentialBody, AuthHelperModel } from '../models';
 import { sequelize } from '../config/database';
 import { optionPostUser } from './UserRegister.test';
 import en from '../locales/en/translation.json';
@@ -107,6 +107,22 @@ async function postLogout(options: postLogoutOption = {}) {
     agent.set('Authorization', `Bearer ${options.token}`);
   }
   return await agent.send();
+}
+
+const validUpdate = { username: 'user1-updated' };
+
+async function putUser(
+  id = 5, 
+  body: string | object | undefined = validUpdate, 
+  options: optionPostUser = {}
+){
+  const agent = request(app).put(`/api/1.0/users/${id}`);
+
+  if (options.token) {
+    agent.set('Authorization', `Bearer ${options.token}`);
+  }
+
+  return await agent.send(body);
 }
 
 describe('Authentication', () => {
@@ -288,6 +304,64 @@ describe('Logout', () => {
     const storedToken = await Auth.findOne({where: {token: token}});
     expect(storedToken).toBeNull();
   });
+});
 
+describe('Token Expiration', () => {
+  test('returns 403 when token is older than 1 week', async () => {
+    const savedUser = await UserHelperModel.addMultipleNewUsers(1);
 
+    const token = 'test-token';
+    const oneWeekAgo = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000) - 1);
+
+    await Auth.create({
+      token: token,
+      userID:  savedUser[0].id,
+      lastUsedAt: oneWeekAgo,
+    });
+
+    const response = await putUser(savedUser[0].id, validUpdate, {token});
+
+    expect(response.status).toBe(403); 
+
+  });
+  test('refreshes lastUsedAt when unexpired token is used', async () => {
+    const savedUser = await UserHelperModel.addMultipleNewUsers(1);
+
+    const token = 'test-token';
+    const fourDaysAgo = new Date(Date.now() - (4 * 24 * 60 * 60 * 1000) );
+
+    await Auth.create({
+      token: token,
+      userID:  savedUser[0].id,
+      lastUsedAt: fourDaysAgo,
+    });
+
+    const rightBeforeSendingRequest = new Date().getTime();
+
+    await putUser(savedUser[0].id, validUpdate, {token});
+
+    const tokenInDB = await AuthHelperModel.findOpaqueToken(token);
+    expect(tokenInDB?.lastUsedAt.getTime()).toBeGreaterThan(rightBeforeSendingRequest);
+
+  });
+  test('refreshes lastUsedAt when unexpired token is used for unauthenticated end point', async () => {
+    const savedUser = await UserHelperModel.addMultipleNewUsers(1);
+
+    const token = 'test-token';
+    const fourDaysAgo = new Date(Date.now() - (4 * 24 * 60 * 60 * 1000) );
+
+    await Auth.create({
+      token: token,
+      userID:  savedUser[0].id,
+      lastUsedAt: fourDaysAgo,
+    });
+
+    const rightBeforeSendingRequest = new Date().getTime();
+
+    await request(app).get('/api/1.0/users/5').set('Authorization', `Bearer ${token}`);
+
+    const tokenInDB = await AuthHelperModel.findOpaqueToken(token);
+    expect(tokenInDB?.lastUsedAt.getTime()).toBeGreaterThan(rightBeforeSendingRequest);
+
+  });
 });

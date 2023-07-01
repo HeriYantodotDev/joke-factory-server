@@ -5,9 +5,7 @@ import { bodyValidatorMW,
   signUpSchema, 
   validationErrorGenerator,
   paginationMW,
-  basicAuthenticationMW,
-  userUpdateSchema,
-  tokenAuthenticationMW
+  userUpdateSchema
 } from '../../utils';
 
 const validationOption = {abortEarly: false};
@@ -22,19 +20,16 @@ class UserController {
   usersTokenParams():void{}
 
   @get('/', UserHelperController.httpGetUsers)
-  @use(tokenAuthenticationMW)
   @use(paginationMW)
   usersGet(): void {}
-
+  
   @get('/:id', UserHelperController.httpGetUserById)
   userGetById(): void {}
 
   @put('/:id', UserHelperController.httpPutUserById )
-  @use(tokenAuthenticationMW)
   @use(bodyValidatorMW(userUpdateSchema, validationErrorGenerator, validationOption))
   userPutById(): void {}
 
   @del('/:id', UserHelperController.httpDeleteUserById)
-  @use(tokenAuthenticationMW)
   userDeleteById(): void{}
 }
