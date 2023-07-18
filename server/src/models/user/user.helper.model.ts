@@ -193,4 +193,9 @@ export class UserHelperModel {
 
     await user.destroy();
   }
+
+  public static async createPasswordResetToken(user: User) {
+    user.passwordResetToken = AuthHelperModel.randomString(16);
+    await user.save();
+  }
 }

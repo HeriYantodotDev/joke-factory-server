@@ -22,5 +22,6 @@
   "inactiveAccount": "Akun anda belum diaktifkan",
   "unauthorizedUserUpdate": "Anda tidak diperbolehkan untuk melakukan pembaharuan pada pengguna",
   "unauthorizedUserDelete": "Anda tidak diperbolehkan untuk menghapus akun pengguna",
-  "emailNotInuse": "Email tidak ditemukan"
+  "emailNotInuse": "Email tidak ditemukan",
+  "passwordResetRequestSuccess": "Silahkan cek email anda untuk melakukan pengaturan ulang password anda"
 }

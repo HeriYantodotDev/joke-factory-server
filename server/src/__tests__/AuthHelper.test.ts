@@ -15,7 +15,6 @@ beforeEach( async() => {
   await Auth.destroy({truncate: true});
 });
 
-
 describe('Scheduled Token Clean Up', () => {
   test('clears the expired token with scheduled task', async () => {
     jest.useFakeTimers();
@@ -28,7 +27,6 @@ describe('Scheduled Token Clean Up', () => {
       lastUsedAt: eightDaysAgo,
     });
 
-
     AuthHelperModel.scheduleCleanUp();
 
     jest.advanceTimersByTime((60*60*1000) + 5000 );
@@ -37,7 +35,6 @@ describe('Scheduled Token Clean Up', () => {
     });
 
     expect(tokenInDB).toBeNull();
-
 
   });
 });

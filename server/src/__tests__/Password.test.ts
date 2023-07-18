@@ -1,13 +1,20 @@
 import request from 'supertest';
 import { app } from '../app';
+import { sequelize } from '../config/database';
+import { 
+  User,
+  UserHelperModel
+} from '../models';
+
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 
+const emailUser1 = 'user1@gmail.com';
+
 const API_URL_RESET_PASSWORD = '/api/1.0/password-reset';
-const user1Email = 'user1@gmail.com';
   
 async function postResetPassword(
-  email:string = user1Email,
+  email:string = emailUser1,
   language = 'en'
 ) {
   return await request(app)
@@ -17,6 +24,18 @@ async function postResetPassword(
       email,
   });
 }
+
+beforeAll( async () => {
+  await sequelize.sync();
+});
+
+beforeEach( async () => {
+  await User.destroy({truncate: true});
+});
+
+afterAll(async () => {
+  await sequelize.close();
+});
 
 describe('Password Reset Request', () => {
 
@@ -33,7 +52,7 @@ describe('Password Reset Request', () => {
   `('return error body with "$message" for unknown email when language is "$language"', 
   async({language, message}) => {
     const nowInMilis = new Date().getTime();
-    const response = await postResetPassword(user1Email, language);
+    const response = await postResetPassword(emailUser1, language);
 
     expect(response.body.path).toBe(API_URL_RESET_PASSWORD);
     expect(response.body.timeStamp).toBeGreaterThan(nowInMilis);
@@ -52,6 +71,37 @@ describe('Password Reset Request', () => {
 
     expect(response.body.validationErrors.email).toBe(message);
     expect(response.status).toBe(400);
+  });
+
+  test('returns 200 ok when a password reset request is sent for known email', async () => {
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    const response = await postResetPassword(user[0].email);
+    expect(response.status).toBe(200);
+  }); 
+
+  test.each`
+  language    | message
+  ${'en'}     | ${en.passwordResetRequestSuccess}
+  ${'id'}     | ${id.passwordResetRequestSuccess}
+  `('returns success response body with the message "$message" for known email when language is "$language"',
+  async({language, message}) => {
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    const response = await postResetPassword(user[0].email, language);
+
+    expect(response.body.message).toBe(message);
+  });
+
+  test('creates passwordResetToken when a password reset request is senf from known email', async () => {
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    await postResetPassword(user[0].email);
+    const userInDB = await User.findOne({
+      where: {
+        email: user[0].email,
+      },
+    });
+
+    expect(userInDB?.passwordResetToken).toBeTruthy();
+
   });
 
 });
