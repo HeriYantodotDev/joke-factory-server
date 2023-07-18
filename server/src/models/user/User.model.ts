@@ -20,6 +20,7 @@ export class User extends Model<
   declare password: string;
   declare inactive: CreationOptional<boolean>;
   declare activationToken: CreationOptional<string>;
+  declare passwordResetToken: CreationOptional<string>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -45,6 +46,7 @@ User.init(
       defaultValue: true,
     },
     activationToken: DataTypes.STRING,
+    passwordResetToken: DataTypes.STRING,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },

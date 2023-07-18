@@ -22,5 +22,6 @@
   "inactiveAccount": "Account is inactive",
   "unauthorizedUserUpdate": "You are not authorized to update user",
   "unauthorizedUserDelete": "You are not authorized to delete user",
-  "emailNotInuse": "Email not found"
+  "emailNotInuse": "Email not found",
+  "passwordResetRequestSuccess": "Check you email for resetting your password"
 }

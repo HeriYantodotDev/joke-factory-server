@@ -1,10 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
-import { ResponseAfterSuccessfulAuth, User, AuthHelperModel} from '../../models';
+import { 
+  ResponseAfterSuccessfulAuth, 
+  User, 
+  AuthHelperModel,
+  UserHelperModel
+} from '../../models';
 import { 
   ErrorAuthFailed, 
   ErrorAuthForbidden,
-  ErrorEmailNotInuse
+  ErrorEmailNotInuse,
+  Locales
 } from '../../utils';
+
+import { ResponsePasswordResetRequestSuccess } from '../../models';
 
 export class AuthHelperController { 
   public static async httpPostAuth(
@@ -67,7 +75,22 @@ export class AuthHelperController {
     next: NextFunction
   ): Promise<void> {
     try {
-      throw new ErrorEmailNotInuse();
+      const { email } = req.body;
+
+      const user = await UserHelperModel.findUserByEmail(email);
+
+      if (!user) {
+        throw new ErrorEmailNotInuse();
+      }
+
+      await UserHelperModel.createPasswordResetToken(user);
+
+      const response: ResponsePasswordResetRequestSuccess = {
+        message: req.t(Locales.passwordResetRequestSuccess),
+      };
+
+      res.send(response);
+      
     } catch (err) {
       next(err);
     }
