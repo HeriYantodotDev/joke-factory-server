@@ -54,3 +54,10 @@ export class ErrorAuthForbidden extends Error {
     super(message);
   }
 }
+
+export class ErrorEmailNotInuse extends Error {
+  public code = 404;
+  constructor(message = Locales.emailNotInuse) {
+    super(message);
+  }
+}

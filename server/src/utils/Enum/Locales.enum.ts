@@ -20,5 +20,5 @@ export enum Locales {
   inactiveAccount = 'inactiveAccount',
   unauthorizedUserUpdate = 'unauthorizedUserUpdate',
   unauthorizedUserDelete = 'unauthorizedUserDelete',
-
+  emailNotInuse = 'emailNotInuse'
 }
