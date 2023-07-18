@@ -49,7 +49,18 @@ export class AuthHelperModel {
     await Auth.destroy({where: {token}});
   }
 
-  private static maxAgeTokenByDay(day: number){
+  public static scheduleCleanUp() {
+    setInterval(async ()=> {
+      const oneWeekAgo = this.maxAgeTokenByDay(7);
+      await Auth.destroy({
+        where: {lastUsedAt: {
+          [Op.lt]: oneWeekAgo,
+        }},
+      });
+    }, 60 * 60 * 1000);
+  }
+
+  public static maxAgeTokenByDay(day: number){
     return new Date(Date.now() - (day * 24 * 60 * 60 * 1000));
   }
 
