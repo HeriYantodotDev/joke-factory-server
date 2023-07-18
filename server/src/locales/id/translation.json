@@ -21,5 +21,6 @@
   "authFailure": "Kredensial tidak valid",
   "inactiveAccount": "Akun anda belum diaktifkan",
   "unauthorizedUserUpdate": "Anda tidak diperbolehkan untuk melakukan pembaharuan pada pengguna",
-  "unauthorizedUserDelete": "Anda tidak diperbolehkan untuk menghapus akun pengguna"
+  "unauthorizedUserDelete": "Anda tidak diperbolehkan untuk menghapus akun pengguna",
+  "emailNotInuse": "Email tidak ditemukan"
 }

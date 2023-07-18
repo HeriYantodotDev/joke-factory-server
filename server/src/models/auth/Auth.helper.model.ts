@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { Auth } from './Auth.model';
+import { Auth } from '../auth';
 import { Op } from 'sequelize';
 
 export class AuthHelperModel {
@@ -63,5 +63,7 @@ export class AuthHelperModel {
   public static maxAgeTokenByDay(day: number){
     return new Date(Date.now() - (day * 24 * 60 * 60 * 1000));
   }
+
+
 
 }

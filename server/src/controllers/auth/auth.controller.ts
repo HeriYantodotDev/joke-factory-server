@@ -3,7 +3,12 @@ import { routerConfig, post, get,  use } from '../../decorators';
 
 import { AuthHelperController } from './auth.helper.controller';
 
-import { authLocal, bodyValidatorMW, loginSchema, validationErrorGenerator
+import { 
+  authLocal, 
+  bodyValidatorMW, 
+  loginSchema, 
+  validationErrorGenerator,
+  passwordResetSchema
 } from '../../utils';
 import { RequestHandler } from 'express';
 
@@ -24,4 +29,12 @@ class AuthController {
 class AuthLogout {
   @post('/', AuthHelperController.httpLogout)
   logout(): void {}
+}
+
+
+@routerConfig('/api/1.0/password-reset')
+class PasswordReset {
+  @post('/', AuthHelperController.httpPostPasswordReset)
+  @use(bodyValidatorMW(passwordResetSchema, validationErrorGenerator, validationOption))
+  resetPassword(): void {}
 }

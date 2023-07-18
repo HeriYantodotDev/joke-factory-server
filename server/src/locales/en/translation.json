@@ -21,5 +21,6 @@
   "authFailure": "Incorrect credential",
   "inactiveAccount": "Account is inactive",
   "unauthorizedUserUpdate": "You are not authorized to update user",
-  "unauthorizedUserDelete": "You are not authorized to delete user"
+  "unauthorizedUserDelete": "You are not authorized to delete user",
+  "emailNotInuse": "Email not found"
 }

@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { ResponseAfterSuccessfulAuth, User, AuthHelperModel} from '../../models';
-import { ErrorAuthFailed, ErrorAuthForbidden } from '../../utils';
+import { 
+  ErrorAuthFailed, 
+  ErrorAuthForbidden,
+  ErrorEmailNotInuse
+} from '../../utils';
 
 export class AuthHelperController { 
   public static async httpPostAuth(
@@ -55,5 +59,17 @@ export class AuthHelperController {
       await AuthHelperModel.deleteOpaqueToken(token);
     }
     res.send();
+  }
+
+  public static async httpPostPasswordReset(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      throw new ErrorEmailNotInuse();
+    } catch (err) {
+      next(err);
+    }
   }
 }

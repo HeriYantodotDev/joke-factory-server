@@ -6,7 +6,8 @@ import {
   ErrorUserExists, 
   ErrorUserNotFound,
   ErrorAuthFailed,
-  ErrorAuthForbidden
+  ErrorAuthForbidden,
+  ErrorEmailNotInuse
 } from './ErrorClass';
 import { ErrorResponse, ValidationErrorResponse } from '../../models';
 
@@ -29,17 +30,28 @@ export function ErrorHandle(err: unknown, req: Request, res: Response, next: Nex
     res.status(err.code).send(generateResponse(path, message, validationErrors));
     return;
   }
-
-  if (
-    err instanceof ErrorSendEmailActivation || 
-    err instanceof ErrorToken || 
-    err instanceof ErrorUserNotFound ||
-    err instanceof ErrorAuthFailed ||
-    err instanceof ErrorAuthForbidden
-  ){
-    res.status(err.code).send(generateResponse(path, req.t(err.message)));
+  // To Do: Refactor this
+  // Begin: handling ErrorGroup simple
+  let isErrorGroupSimpleFound = false;
+  const ErrorGroupSimple = [
+    ErrorSendEmailActivation,
+    ErrorToken,
+    ErrorUserNotFound,
+    ErrorAuthFailed,
+    ErrorAuthForbidden,
+    ErrorEmailNotInuse,
+  ];
+  ErrorGroupSimple.some((errorClass) => {
+    if (err instanceof errorClass) {
+      isErrorGroupSimpleFound = true;
+      res.status(err.code).send(generateResponse(path, req.t(err.message)));
+      return true;
+    }
+  });
+  if(isErrorGroupSimpleFound) {
     return;
   }
+   // end: handling ErrorGroup simple 
 
   if ( !(err instanceof Error)) {
     const message = 'Unknown Error';
