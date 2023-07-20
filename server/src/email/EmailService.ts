@@ -21,5 +21,25 @@ export async function sendAccountActivation(user: User): Promise<void | Error> {
     // eslint-disable-next-line no-console
     console.log(nodemailer.getTestMessageUrl(response));
   }
+}
 
+export async function sendPasswordReset(user: User): Promise<void | Error> {
+  const response = await transporter.sendMail({
+    from: 'Joke Factory <hello@jokefactory>',
+    to: user.email,
+    subject: 'Password Reset',
+    html: `
+    <div>
+      Please click link below to reset your password
+    <div>
+    <div>
+      <a href="http://localhost:8080/#/password-reset?reset=${user.passwordResetToken}">Reset</a>
+    <div>
+      `,
+  });
+
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log(nodemailer.getTestMessageUrl(response));
+  }
 }
