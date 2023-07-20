@@ -16,7 +16,7 @@
     "test:inband": "NODE_ENV=test jest --runInBand",
     "test:inband:coverage": "NODE_ENV=test jest --coverage --runInBand",
     "test:inband:watch": "NODE_ENV=test jest --watchAll --runInBand",
-    "test:one": "jest --testPathPattern=TokenService.test.ts",
+    "test:one": "jest --testPathPattern=Password.test.ts",
     "test:one:watch": "jest --testPathPattern=Password.test.ts --watchAll",
     "test:watch": "NODE_ENV=test jest --watchAll",
     "test:watch:inband": "NODE_ENV=test jest --runInBand --watchAll",

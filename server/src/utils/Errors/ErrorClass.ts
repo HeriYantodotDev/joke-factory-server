@@ -17,6 +17,13 @@ export class ErrorSendEmailActivation extends Error {
   }
 }
 
+export class ErrorSendEmailPasswordReset extends Error {
+  public code = 502;
+  constructor(message = Locales.emailFailure) {
+    super(message);
+  }
+}
+
 export class ErrorUserExists extends Error {
   public field: string;
   public code = 400;
@@ -61,3 +68,4 @@ export class ErrorEmailNotInuse extends Error {
     super(message);
   }
 }
+

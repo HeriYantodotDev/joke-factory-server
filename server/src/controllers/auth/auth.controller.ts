@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
-import { routerConfig, post, get,  use } from '../../decorators';
+import { routerConfig, post, get, use } from '../../decorators';
 
 import { AuthHelperController } from './auth.helper.controller';
 

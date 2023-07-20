@@ -7,7 +7,8 @@ import {
   ErrorUserNotFound,
   ErrorAuthFailed,
   ErrorAuthForbidden,
-  ErrorEmailNotInuse
+  ErrorEmailNotInuse,
+  ErrorSendEmailPasswordReset
 } from './ErrorClass';
 import { ErrorResponse, ValidationErrorResponse } from '../../models';
 
@@ -40,6 +41,7 @@ export function ErrorHandle(err: unknown, req: Request, res: Response, next: Nex
     ErrorAuthFailed,
     ErrorAuthForbidden,
     ErrorEmailNotInuse,
+    ErrorSendEmailPasswordReset,
   ];
   ErrorGroupSimple.some((errorClass) => {
     if (err instanceof errorClass) {

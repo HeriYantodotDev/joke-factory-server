@@ -9,6 +9,58 @@ import {
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 
+
+import { SMTPServer } from 'smtp-server';
+
+let lastMail: string;
+let server: SMTPServer;
+let simulateSmtpFailure = false;
+
+class ErrorSimulate extends Error {
+  public responseCode = 0;
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+
+beforeAll( async () => {
+  await sequelize.sync();
+  
+  server = new SMTPServer({
+    authOptional: true,
+    onData(stream, session, callback) {
+      let mailBody = '';
+      stream.on('data', (data) => {
+        mailBody += data.toString();
+      });
+      stream.on('end', () => {
+        if (simulateSmtpFailure) {
+          const err = new ErrorSimulate('Invalid mailbox');
+          err.responseCode = 533;
+          return callback(err);
+        }
+        lastMail = mailBody;
+        callback();
+      });
+    },
+  });
+
+  server.listen(8585, 'localhost');
+});
+
+beforeEach( async () => {
+  simulateSmtpFailure = false;
+  jest.restoreAllMocks();
+  await User.destroy({truncate: true});
+});
+
+afterAll(async () => {
+  await sequelize.close();
+  server.close();
+});
+
+
 const emailUser1 = 'user1@gmail.com';
 
 const API_URL_RESET_PASSWORD = '/api/1.0/password-reset';
@@ -24,18 +76,6 @@ async function postResetPassword(
       email,
   });
 }
-
-beforeAll( async () => {
-  await sequelize.sync();
-});
-
-beforeEach( async () => {
-  await User.destroy({truncate: true});
-});
-
-afterAll(async () => {
-  await sequelize.close();
-});
 
 describe('Password Reset Request', () => {
 
@@ -102,6 +142,50 @@ describe('Password Reset Request', () => {
 
     expect(userInDB?.passwordResetToken).toBeTruthy();
 
+  });
+
+  test('creates passwordResetToken when a password reset request is senf from known email', async () => {
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    await postResetPassword(user[0].email);
+    const userInDB = await User.findOne({
+      where: {
+        email: user[0].email,
+      },
+    });
+    expect(userInDB?.passwordResetToken).toBeTruthy();
+  });
+
+  test('sends a password reset email wiht passwordResetToken', async () => {
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    await postResetPassword(user[0].email);
+    const userInDB = await User.findOne({
+      where: {
+        email: user[0].email,
+      },
+    });
+
+    const passwordResetToken = userInDB?.passwordResetToken;
+    expect(lastMail).toContain(user[0].email);
+    expect(lastMail).toContain(passwordResetToken);
+  });
+
+  test('returns 502 Bad Gateway when sending email fails', async () => {
+    simulateSmtpFailure = true;
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    const response = await postResetPassword(user[0].email);
+    expect(response.statusCode).toBe(502);
+  });
+
+  test.each`
+  language    | message
+  ${'en'}     | ${en.emailFailure}
+  ${'id'}     | ${id.emailFailure}
+  `('returns error body with the message "$message" when sending email is failed & language is "$language"',
+  async({language, message}) => {
+    simulateSmtpFailure = true;
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    const response = await postResetPassword(user[0].email, language);
+    expect(response.body.message).toBe(message);
   });
 
 });

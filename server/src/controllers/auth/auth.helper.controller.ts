@@ -9,10 +9,13 @@ import {
   ErrorAuthFailed, 
   ErrorAuthForbidden,
   ErrorEmailNotInuse,
+  ErrorSendEmailPasswordReset,
   Locales
 } from '../../utils';
 
 import { ResponsePasswordResetRequestSuccess } from '../../models';
+
+import { sendPasswordReset } from '../../email/EmailService';
 
 export class AuthHelperController { 
   public static async httpPostAuth(
@@ -84,6 +87,12 @@ export class AuthHelperController {
       }
 
       await UserHelperModel.createPasswordResetToken(user);
+
+      try {
+        await sendPasswordReset(user);
+      } catch(err) {
+        throw new ErrorSendEmailPasswordReset();
+      }
 
       const response: ResponsePasswordResetRequestSuccess = {
         message: req.t(Locales.passwordResetRequestSuccess),
