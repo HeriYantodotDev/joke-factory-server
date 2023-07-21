@@ -206,4 +206,19 @@ export class UserHelperModel {
       },
     });
   }
+
+  public static async updatePassword(user: User, newPassword: string) {
+    const newHashPassword = await this.hashPassword(newPassword);
+    user.set({
+      password: newHashPassword,
+      passwordResetToken: '',
+      inactive: false,
+      activationToken: '',
+    });
+
+    await user.save();
+
+    await AuthHelperModel.destroyAllTokensByUserId(user.id);
+  }
+
 }

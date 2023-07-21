@@ -1,10 +1,18 @@
 # Joke Factory Project
-This is my first full stack project using TypeScript, and also my first time practicing Test-Driven Development (TDD) since the beginning. Through TDD, I'm ensuring that I can produce clean code by regularly refactoring my codebase. 
-
 The Joke Factory project is a simple platform for users to share and read jokes. Users can submit their own jokes, review existing jokes, and leave comments.
 
+This projects serves as my practice to learn about Test-Driven Development (TDD) in TypeScript. Through TDD, I'm practicing to produce clean code by regularly refactoring my codebase. 
+
+## Getting Started 
+
+- Test: 
+  - Running all the test one by one `npm run test:inband`
+  - Running One file test and re-run the test after saving the files `npm run test:one:watch`
+- Running the development server: 
+  - `npm run prestart` Then `npm run start:server`
+
 ## Current Status
-I'm still working on the back end, so the project is not yet fully functional. However, I'm making progress and hope to have a working version soon.
+Working In Progress
 
 ## Main Technologies Used
 This project is built using the following technologies:
