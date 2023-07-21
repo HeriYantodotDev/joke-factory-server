@@ -5,13 +5,14 @@ import { bodyValidatorMW,
   signUpSchema, 
   validationErrorGenerator,
   paginationMW,
-  userUpdateSchema
+  userUpdateSchema,
+  passwordResetSchema
 } from '../../utils';
 
 const validationOption = {abortEarly: false};
 
 @routerConfig('/api/1.0/users')
-class UserController {
+class UsersController {
   @post('/', UserHelperController.httpPostSignUp)
   @use(bodyValidatorMW(signUpSchema, validationErrorGenerator, validationOption))
   usersPost(): void {}
@@ -32,4 +33,11 @@ class UserController {
 
   @del('/:id', UserHelperController.httpDeleteUserById)
   userDeleteById(): void{}
+}
+
+@routerConfig('/api/1.0/user')
+class UserController {
+  @post('/password-reset', UserHelperController.httpPostPasswordReset)
+  @use(bodyValidatorMW(passwordResetSchema, validationErrorGenerator, validationOption))
+  resetPassword(): void {}
 }

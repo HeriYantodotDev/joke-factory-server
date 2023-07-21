@@ -63,7 +63,7 @@ afterAll(async () => {
 
 const emailUser1 = 'user1@gmail.com';
 
-const API_URL_RESET_PASSWORD = '/api/1.0/password-reset';
+const API_URL_RESET_PASSWORD = '/api/1.0/user/password-reset';
   
 async function postResetPassword(
   email:string = emailUser1,
