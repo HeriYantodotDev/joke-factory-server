@@ -2,7 +2,8 @@ import { User } from './User.model';
 import { NewUser, 
   UserDataFromDB, 
   UserPagination,
-  UserWithIDOnly
+  UserWithIDOnly,
+  ExpectedRequestBodyhttpPutUserById
 } from './user.types';
 import bcrypt from 'bcrypt';
 import {sendAccountActivation} from '../../email/EmailService'; 
@@ -170,16 +171,18 @@ export class UserHelperModel {
     return { id, username, email };
   }
 
-  public static async updateUserNameByID(idParams: number, newUserName: string): Promise<void> {
+  public static async updateUserByID(idParams: number, body: ExpectedRequestBodyhttpPutUserById): Promise<void> {
     const user = await this.getActiveUserByid(idParams);
 
     if (!user) {
       throw new ErrorUserNotFound();
     }
 
-    user.set({
-      username: newUserName,
-    });
+    if (body.image) {
+      user.image = body.image;
+    }
+
+    user.username = body.username;
 
     await user.save();
   }

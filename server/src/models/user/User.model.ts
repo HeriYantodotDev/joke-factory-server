@@ -21,6 +21,7 @@ export class User extends Model<
   declare inactive: CreationOptional<boolean>;
   declare activationToken: CreationOptional<string>;
   declare passwordResetToken: CreationOptional<string>;
+  declare image: CreationOptional<string>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -49,6 +50,7 @@ User.init(
     passwordResetToken: DataTypes.STRING,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
+    image: DataTypes.STRING,
   },
   {
     sequelize,
