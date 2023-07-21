@@ -1,14 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { 
   ErrorBodyValidation,
-  ErrorSendEmailActivation,
+  ErrorSendEmail,
   ErrorToken,
   ErrorUserExists, 
   ErrorUserNotFound,
   ErrorAuthFailed,
   ErrorAuthForbidden,
-  ErrorEmailNotInuse,
-  ErrorSendEmailPasswordReset
+  ErrorEmailNotInuse
 } from './ErrorClass';
 import { ErrorResponse, ValidationErrorResponse } from '../../models';
 
@@ -35,13 +34,12 @@ export function ErrorHandle(err: unknown, req: Request, res: Response, next: Nex
   // Begin: handling ErrorGroup simple
   let isErrorGroupSimpleFound = false;
   const ErrorGroupSimple = [
-    ErrorSendEmailActivation,
+    ErrorSendEmail,
     ErrorToken,
     ErrorUserNotFound,
     ErrorAuthFailed,
     ErrorAuthForbidden,
     ErrorEmailNotInuse,
-    ErrorSendEmailPasswordReset,
   ];
   ErrorGroupSimple.some((errorClass) => {
     if (err instanceof errorClass) {

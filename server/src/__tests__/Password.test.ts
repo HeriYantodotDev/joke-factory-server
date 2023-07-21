@@ -23,6 +23,48 @@ class ErrorSimulate extends Error {
   }
 }
 
+const emailUser1 = 'user1@gmail.com';
+const randomPassword = 'B4GuaN@SmZ';
+const randomPasswordResetToken = 'abcde';
+
+const API_URL_RESET_PASSWORD = '/api/1.0/user/password-reset';
+const API_URL_UPDATE_PASSWORD = '/api/1.0/user/password';
+  
+async function postResetPassword(
+  email:string = emailUser1,
+  language = 'en'
+) {
+  return await request(app)
+    .post(API_URL_RESET_PASSWORD)
+    .set('Accept-Language', language)
+    .send({
+      email,
+  });
+}
+
+async function putPasswordUpdate(
+  body: {
+    password: string,
+    passwordResetToken: string,
+  } = {
+    password: randomPassword,
+    passwordResetToken: randomPasswordResetToken,
+  }
+  , 
+  options:{language: string } | null =  null
+) {
+  const {password, passwordResetToken} = body;
+  const agent = request(app).put(API_URL_UPDATE_PASSWORD);
+
+  if (options?.language) {
+    agent.set('Accept-Language', options.language);
+  }
+  return await agent
+    .send({
+      password, 
+      passwordResetToken, 
+    });
+}
 
 beforeAll( async () => {
   await sequelize.sync();
@@ -59,23 +101,6 @@ afterAll(async () => {
   await sequelize.close();
   server.close();
 });
-
-
-const emailUser1 = 'user1@gmail.com';
-
-const API_URL_RESET_PASSWORD = '/api/1.0/user/password-reset';
-  
-async function postResetPassword(
-  email:string = emailUser1,
-  language = 'en'
-) {
-  return await request(app)
-    .post(API_URL_RESET_PASSWORD)
-    .set('Accept-Language', language)
-    .send({
-      email,
-  });
-}
 
 describe('Password Reset Request', () => {
 
@@ -189,3 +214,118 @@ describe('Password Reset Request', () => {
   });
 
 });
+
+describe('Password Update', () => {
+  test('returns 403 when password update request does not have the valid token', async () => {
+    const response = await putPasswordUpdate();
+    expect(response.status).toBe(403);
+  });
+
+  test.each`
+  language    | message
+  ${'id'}     | ${id.unauthPasswordReset}
+  ${'en'}     | ${en.unauthPasswordReset}
+  `('returns error body with "$message" if the passwordResetToken invalid when language is "$language"',
+  async({language, message}) => {
+    const nowInMilis = new Date().getTime();
+    const response = await putPasswordUpdate(
+      {
+        password: randomPassword,
+        passwordResetToken: randomPasswordResetToken,
+      },
+      {
+        language: language,
+      }
+    );
+
+    expect(response.body.path).toBe(API_URL_UPDATE_PASSWORD);
+    expect(response.body.timeStamp).toBeGreaterThan(nowInMilis);
+    expect(response.body.message).toBe(message);
+  });
+
+  test('returns 403 when the password request is invalid and reset token is invalid', async () => {
+    const response = await putPasswordUpdate(
+      {
+        password: 'as',
+        passwordResetToken: 'as',
+      });
+
+      expect(response.status).toBe(403);
+  });
+
+  test('return 400 when trying to update with invalid password, and reset token is valid', async () => {
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    await postResetPassword(user[0].email);
+    const userInDB = await User.findOne({
+      where: {
+        email: user[0].email,
+      },
+    });
+    const token = userInDB?.passwordResetToken;
+
+    if (!token) {
+      throw new Error('Something wrong with the db');
+    }
+
+    const response = await putPasswordUpdate(
+      {
+        password: 'as',
+        passwordResetToken: token,
+      }
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  test.each`
+    language    | value                     | errorMessage
+    ${'en'}     | ${null}                   | ${en.errorPasswordNull}
+    ${'en'}     | ${'password'}             | ${en.errorPassword1}
+    ${'en'}     | ${'password@123'}         | ${en.errorPassword1}
+    ${'en'}     | ${'823472734'}            | ${en.errorPassword1}
+    ${'en'}     | ${'P4S5WORDS'}            | ${en.errorPassword1}
+    ${'en'}     | ${'P1@a'}                 | ${en.errorPassword2}
+    ${'en'}     | ${'%^&*('}                | ${en.errorPassword2}
+    ${'id'}     | ${null}                   | ${id.errorPasswordNull}
+    ${'id'}     | ${'password'}             | ${id.errorPassword1}
+    ${'id'}     | ${'password@123'}         | ${id.errorPassword1}
+    ${'id'}     | ${'823472734'}            | ${id.errorPassword1}
+    ${'id'}     | ${'P4S5WORDS'}            | ${id.errorPassword1}
+    ${'id'}     | ${'P1@a'}                 | ${id.errorPassword2}
+    ${'id'}     | ${'%^&*('}                | ${id.errorPassword2}
+  `('[password validationErrors] returns "$errorMessage" when "$value" is received when language is "$language"', 
+  async({language, value, errorMessage}) => {
+    const user = await UserHelperModel.addMultipleNewUsers(1);
+    await postResetPassword(user[0].email);
+    const userInDB = await User.findOne({
+      where: {
+        email: user[0].email,
+      },
+    });
+    const token = userInDB?.passwordResetToken;
+
+    if (!token) {
+      throw new Error('Something wrong with the db');
+    }
+
+    const response = await putPasswordUpdate(
+      {
+        password: value,
+        passwordResetToken: token,
+      },
+      {language: language}
+    );
+
+    if (language === 'en') {
+      expect(response.body.message).toBe(en.validationFailure);
+    }
+
+    if (language === 'id') {
+      expect(response.body.message).toBe(id.validationFailure);
+    }
+
+    expect(response.body.validationErrors['password']).toBe(errorMessage);
+
+  });
+});
+
