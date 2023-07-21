@@ -3,12 +3,12 @@ import { app } from '../app';
 import { sequelize } from '../config/database';
 import { 
   User,
-  UserHelperModel
+  UserHelperModel,
+  Auth
 } from '../models';
 
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
-
 
 import { SMTPServer } from 'smtp-server';
 
@@ -27,7 +27,7 @@ const emailUser1 = 'user1@gmail.com';
 const randomPassword = 'B4GuaN@SmZ';
 const randomPasswordResetToken = 'abcde';
 
-const API_URL_RESET_PASSWORD = '/api/1.0/user/password-reset';
+const API_URL_RESET_PASSWORD = '/api/1.0/user/password';
 const API_URL_UPDATE_PASSWORD = '/api/1.0/user/password';
   
 async function postResetPassword(
@@ -64,6 +64,41 @@ async function putPasswordUpdate(
       password, 
       passwordResetToken, 
     });
+}
+
+async function createUserPostResetPutPassword(
+  password = randomPassword,
+  language = 'en'
+) {
+    const user = await UserHelperModel.addMultipleNewUsers(0, 1);
+    await postResetPassword(user[0].email);
+    const userInDB = await User.findOne({
+      where: {
+        email: user[0].email,
+      },
+    });
+
+    if (!userInDB) {
+      throw new Error('Something error with DB');
+    }
+    userInDB.activationToken = 'random';
+    await userInDB.save();
+
+    const token = userInDB?.passwordResetToken;
+
+    if (!token) {
+      throw new Error('Something wrong with the db');
+    }
+
+    return await putPasswordUpdate(
+      {
+        password,
+        passwordResetToken: token,
+      },
+      {
+        language,
+      }
+    );
 }
 
 beforeAll( async () => {
@@ -295,26 +330,7 @@ describe('Password Update', () => {
     ${'id'}     | ${'%^&*('}                | ${id.errorPassword2}
   `('[password validationErrors] returns "$errorMessage" when "$value" is received when language is "$language"', 
   async({language, value, errorMessage}) => {
-    const user = await UserHelperModel.addMultipleNewUsers(1);
-    await postResetPassword(user[0].email);
-    const userInDB = await User.findOne({
-      where: {
-        email: user[0].email,
-      },
-    });
-    const token = userInDB?.passwordResetToken;
-
-    if (!token) {
-      throw new Error('Something wrong with the db');
-    }
-
-    const response = await putPasswordUpdate(
-      {
-        password: value,
-        passwordResetToken: token,
-      },
-      {language: language}
-    );
+    const response = await createUserPostResetPutPassword(value, language);
 
     if (language === 'en') {
       expect(response.body.message).toBe(en.validationFailure);
@@ -326,6 +342,94 @@ describe('Password Update', () => {
 
     expect(response.body.validationErrors['password']).toBe(errorMessage);
 
+  });
+
+  test('returns 200 Ok when valid password is send with valid reset token ', async () => {
+    const response = await createUserPostResetPutPassword();
+
+    expect(response.status).toBe(200);
+  });
+
+  test('updates the password in database when valid password is send with valid reset token ', async () => {
+    await createUserPostResetPutPassword();
+
+    const userUpdateInDM = await User.findOne({
+      where: {
+        email: emailUser1,
+      },
+    });
+
+    expect(userUpdateInDM?.password).not.toEqual(emailUser1);
+  });
+
+  test('clears the reset token in database when the request is valid ', async () => {
+    await createUserPostResetPutPassword();
+
+    const userUpdateInDM = await User.findOne({
+      where: {
+        email: emailUser1,
+      },
+    });
+
+    expect(userUpdateInDM?.passwordResetToken).toBeFalsy();
+  });
+
+  test('activates and clears activation Token if the account is inactive after valid password reset', async () => {
+    await createUserPostResetPutPassword();
+
+    const userUpdateInDM = await User.findOne({
+      where: {
+        email: emailUser1,
+      },
+    });
+
+    expect(userUpdateInDM?.inactive).toBe(false);
+    expect(userUpdateInDM?.activationToken).toBeFalsy();
+  });
+
+  test('It clears all tokens of User, when password has changed', async () => {
+    // I don't refactor this since I only use it once. 
+    const user = await UserHelperModel.addMultipleNewUsers(0, 1);
+    await postResetPassword(user[0].email);
+    const userInDB = await User.findOne({
+      where: {
+        email: user[0].email,
+      },
+    });
+
+    if (!userInDB) {
+      throw new Error('Something error with DB');
+    }
+    userInDB.activationToken = 'random';
+    await userInDB.save();
+
+    await Auth.create({
+      userID: userInDB.id,
+      token: 'randomtoken',
+      lastUsedAt: new Date(Date.now()),
+    });
+
+    const token = userInDB?.passwordResetToken;
+
+    if (!token) {
+      throw new Error('Something wrong with the db');
+    }
+
+    await putPasswordUpdate(
+      {
+        password: randomPassword,
+        passwordResetToken: token,
+      }
+    );
+
+    const tokens = await Auth.findAll({
+      where: {
+        userID: userInDB.id,
+      },
+    });
+
+    expect(tokens.length).toBe(0);
+  
   });
 });
 

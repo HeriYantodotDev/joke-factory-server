@@ -7,7 +7,8 @@ import {
   ResponseUserValidationSuccess,
   RequestWithPagination,
   RequestWithAuthenticatedUser,
-  ResponsePasswordResetRequestSuccess
+  ResponsePasswordResetRequestSuccess,
+  RequestWithUser
 } from '../../models';
 
 import { 
@@ -22,6 +23,7 @@ import {
 import { Locales } from '../../utils';
 
 import { sendPasswordReset } from '../../email/EmailService';
+
 
 export class UserHelperController {
   public static async httpPostSignUp(
@@ -203,12 +205,23 @@ export class UserHelperController {
   }
 
   public static async httpPutPasswordUpdate(
-    req: Request,
+    req: RequestWithUser,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
+      const user = req.user;
+
+      if (!user) {
+        throw new Error('something wrong with the "passwordResetTokenCheckMW"');
+      }
+
+      const newPassword = req.body.password;
+
+      await UserHelperModel.updatePassword(user, newPassword );
+
       res.send();
+
     } catch (err) {
       next(err);
     }

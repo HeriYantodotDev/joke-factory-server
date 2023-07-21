@@ -114,8 +114,7 @@ class startupMiddleware {
         // If password is incorrect, call done with false and error message
         return done(null, false);
       }
-    }
-    );
+    });
   }
 
   private static enablePassport() {

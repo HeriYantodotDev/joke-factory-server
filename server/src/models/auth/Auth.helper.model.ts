@@ -64,6 +64,12 @@ export class AuthHelperModel {
     return new Date(Date.now() - (day * 24 * 60 * 60 * 1000));
   }
 
-
+  public static async destroyAllTokensByUserId(id: number) {
+    await Auth.destroy({
+      where: {
+        userID: id,
+      },
+    });
+  }
 
 }

@@ -42,11 +42,11 @@ class UsersController {
 
 @routerConfig('/api/1.0/user')
 class UserController {
-  @post('/password-reset', UserHelperController.httpPostPasswordReset)
+  @post('/password', UserHelperController.httpPostPasswordReset)
   @use(bodyValidatorMW(passwordResetSchema, validationErrorGenerator, validationOption))
   resetPassword(): void {}
 
-  @put('/password', UserHelperController.httpPutPasswordUpdate)
+  @put('/password', UserHelperController.httpPutPasswordUpdate as RequestHandler)
   @use(bodyValidatorMW(passwordUpdateSchema, validationErrorGenerator, validationOption))
   @use(passwordResetTokenCheckMW as RequestHandler)
   passwordUpdate(): void {}
