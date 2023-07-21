@@ -10,14 +10,7 @@ export class ErrorBodyValidation extends Error {
   }
 }
 
-export class ErrorSendEmailActivation extends Error {
-  public code = 502;
-  constructor(message = Locales.emailFailure) {
-    super(message);
-  }
-}
-
-export class ErrorSendEmailPasswordReset extends Error {
+export class ErrorSendEmail extends Error {
   public code = 502;
   constructor(message = Locales.emailFailure) {
     super(message);

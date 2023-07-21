@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
+import { RequestHandler } from 'express';
 import { routerConfig, post, get, use, put, del } from '../../decorators';
 import { UserHelperController } from './user.helper.controller';
 import { bodyValidatorMW, 
@@ -6,8 +7,12 @@ import { bodyValidatorMW,
   validationErrorGenerator,
   paginationMW,
   userUpdateSchema,
-  passwordResetSchema
+  passwordResetSchema,
+  passwordUpdateSchema
 } from '../../utils';
+
+
+import { passwordResetTokenCheckMW } from '../../utils';
 
 const validationOption = {abortEarly: false};
 
@@ -40,4 +45,9 @@ class UserController {
   @post('/password-reset', UserHelperController.httpPostPasswordReset)
   @use(bodyValidatorMW(passwordResetSchema, validationErrorGenerator, validationOption))
   resetPassword(): void {}
+
+  @put('/password', UserHelperController.httpPutPasswordUpdate)
+  @use(bodyValidatorMW(passwordUpdateSchema, validationErrorGenerator, validationOption))
+  @use(passwordResetTokenCheckMW as RequestHandler)
+  passwordUpdate(): void {}
 }

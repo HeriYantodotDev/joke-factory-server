@@ -7,7 +7,7 @@ import { NewUser,
 import bcrypt from 'bcrypt';
 import {sendAccountActivation} from '../../email/EmailService'; 
 import { sequelize } from '../../config/database';
-import { ErrorSendEmailActivation } from '../../utils/Errors';
+import { ErrorSendEmail } from '../../utils/Errors';
 import { ErrorUserNotFound } from '../../utils/Errors';
 import { Op, WhereOptions, InferAttributes } from 'sequelize';
 import { AuthHelperModel } from '../auth';
@@ -26,7 +26,7 @@ export class UserHelperModel {
       await sendAccountActivation(user);
     } catch (err) {
       await transaction.rollback();
-      throw new ErrorSendEmailActivation();
+      throw new ErrorSendEmail();
     }
 
     await transaction.commit();
@@ -197,5 +197,13 @@ export class UserHelperModel {
   public static async createPasswordResetToken(user: User) {
     user.passwordResetToken = AuthHelperModel.randomString(16);
     await user.save();
+  }
+
+  public static async findUserBypasswordResetToken(token: string) {
+    return await User.findOne({
+      where: {
+        passwordResetToken: token,
+      },
+    });
   }
 }

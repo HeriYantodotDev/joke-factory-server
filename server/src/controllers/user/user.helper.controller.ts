@@ -16,7 +16,7 @@ import {
   ErrorUserNotFound,
   ErrorAuthForbidden,
   ErrorEmailNotInuse,
-  ErrorSendEmailPasswordReset
+  ErrorSendEmail
 } from '../../utils/Errors';
 
 import { Locales } from '../../utils';
@@ -188,7 +188,7 @@ export class UserHelperController {
       try {
         await sendPasswordReset(user);
       } catch(err) {
-        throw new ErrorSendEmailPasswordReset();
+        throw new ErrorSendEmail();
       }
 
       const response: ResponsePasswordResetRequestSuccess = {
@@ -197,6 +197,18 @@ export class UserHelperController {
 
       res.send(response);
       
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async httpPutPasswordUpdate(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      res.send();
     } catch (err) {
       next(err);
     }

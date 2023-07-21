@@ -17,6 +17,7 @@ export class AuthHelperController {
     next: NextFunction
   ): Promise<void> {
     try {
+
       if (!req.user) {
         next(new ErrorAuthFailed());
         return;
