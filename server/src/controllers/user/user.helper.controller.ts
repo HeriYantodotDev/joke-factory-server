@@ -8,7 +8,8 @@ import {
   RequestWithPagination,
   RequestWithAuthenticatedUser,
   ResponsePasswordResetRequestSuccess,
-  RequestWithUser
+  RequestWithUser,
+  ExpectedRequestBodyhttpPutUserById
 } from '../../models';
 
 import { 
@@ -23,7 +24,6 @@ import {
 import { Locales } from '../../utils';
 
 import { sendPasswordReset } from '../../email/EmailService';
-
 
 export class UserHelperController {
   public static async httpPostSignUp(
@@ -133,13 +133,20 @@ export class UserHelperController {
   ): Promise<void> {
     try {
       const authenticatedUser = req.authenticatedUser;
-      const newUserName = req.body.username;
+      const requestBody: unknown = req.body;
       const id = Number(req.params.id);
+
       if ( !authenticatedUser || authenticatedUser.id !== id) {
         throw new ErrorAuthForbidden(Locales.unauthorizedUserUpdate);
       }
 
-      await UserHelperModel.updateUserNameByID(id, newUserName);
+      if (typeof requestBody !== 'object' || requestBody === null) {
+        throw new Error('Something wrong with the req.body, please check the middleware');
+      }
+
+      const expectedRequestBody = requestBody as ExpectedRequestBodyhttpPutUserById;
+
+      await UserHelperModel.updateUserByID(id, expectedRequestBody );
       res.send();
     }
 

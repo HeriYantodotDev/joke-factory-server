@@ -75,3 +75,8 @@ export interface ResponseAfterSuccessfulAuth {
   username: string,
   token: string,
 }
+
+export interface ExpectedRequestBodyhttpPutUserById {
+  username: string,
+  image?: string,
+}

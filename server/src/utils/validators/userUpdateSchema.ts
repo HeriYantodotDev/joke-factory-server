@@ -9,6 +9,7 @@ export const userUpdateSchema = Joi.object({
       'string.empty': Locales.errorUsernameEmpty,
       'string.base': Locales.errorUsernameNull,
     }),
+  image: Joi.any().optional(),
 }).options({
     allowUnknown: false,
 }).messages({

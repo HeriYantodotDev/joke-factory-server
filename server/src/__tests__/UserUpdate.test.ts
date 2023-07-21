@@ -5,6 +5,8 @@ import { optionPostUser } from './UserRegister.test';
 import { sequelize } from '../config/database';
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
+import fs from 'fs';
+import path from 'path';
 
 const emailUser1 = 'user1@gmail.com';
 const passwordUser1 = 'A4GuaN@SmZ';
@@ -162,6 +164,29 @@ describe('User Update', () => {
     expect(response.status).toBe(403);
   });
 
+  test('saves the user image when update contains image as base64', async () => {
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+    const fileInBase64 = fs.readFileSync(filePath, {encoding: 'base64'});
 
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+      );
+      
+    const updatedUser = await UserHelperModel.getActiveUserByid(userList[0].id);
+
+    expect(updatedUser?.image).toBeTruthy();
+  });
 
 });
