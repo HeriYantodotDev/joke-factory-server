@@ -1,0 +1,14 @@
+{
+  "testEnvironment": "jsdom",
+  "transform": {
+    "^.+\\.tsx?$": "ts-jest"
+  },
+  "setupFilesAfterEnv": [
+    "@testing-library/jest-dom/extend-expect"
+  ],
+  "moduleNameMapper": {
+    "\\.(scss|css)$": "<rootDir>/src/__mocks__/style-mock.ts",
+    "\\.(png|jpg)$": "<rootDir>/src/__mocks__/image-mock.ts",
+    "\\.svg": "<rootDir>/src/__mocks__/svg-mock.ts"
+  }
+}
