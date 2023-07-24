@@ -150,7 +150,6 @@ I'm documenting the process I'm creating this for my future reference.
         );
       }
     ```
-
 - Form: Input Processing
   - The button in this form is disable initially. Let's make the button is enable after the password & password repeat has the same value.
     - test
@@ -220,9 +219,137 @@ I'm documenting the process I'm creating this for my future reference.
         );
       }
       ```
-  - 
+- Sign Up API Request
+  - Let's create a test to submit the button. First we have to mock the back end. Why don't we try
+    to test it directly with the backend. First the backend is still on progress, second, it's better to test it in isolation. 
+    Here's how to mock the backend
+    ```
+    const mockFn = jest.fn();
+    global.fetch = mockFn;
+    ```
+    This will mock the `fetch` function. 
+    Now, here's the test:
+    ```
+    test('sends username, email, and password to backend after clicking the button', async () => {
+      const { user } = setup(< SignUp />);
+      const userNameInput = screen.getByLabelText('User Name');
+      const emailInput = screen.getByLabelText('Email');
+      const passwordInput = screen.getByLabelText('Password');
+      const passwordRepeatinput = screen.getByLabelText('Password Repeat');
 
-- 
+      await user.type(userNameInput, signUpNewUserData.username);
+      await user.type(emailInput, signUpNewUserData.email);
+      await user.type(passwordInput, signUpNewUserData.password);
+      await user.type(passwordRepeatinput, signUpNewUserData.password);
+      const button = screen.queryByRole('button', { name: 'Sign Up' });
+      if (!button) {
+        fail('Button is not found');
+      }
+
+      const mockFn = jest.fn();
+
+      global.fetch = mockFn;
+
+      await user.click(button);
+
+      const firstCallOfMockFn = mockFn.mock.calls[0];
+      const body = JSON.parse(firstCallOfMockFn[1].body);
+      expect(body).toEqual(signUpNewUserData);
+    });
+    ```
+  - And here's for the implementation :
+    First we create states for each input, and create a function to handle the submit. 
+    In the function we make a fetch request. For the fetch request, I'm using the built-in `fetch` function, and modified it a little bit, so we don't have a boilerplate code. So it's like this : 
+    ```
+    export const API_ROOT_URL = '/api/1.0';
+
+    export class FetchAPI {
+      static async post(apiURL: string, body: object) {
+        return await fetch(API_ROOT_URL + apiURL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+      }
+    }
+    ```
+
+    Here's the full implementation: 
+    ```
+    import React, { ChangeEvent, useState } from 'react';
+
+    import {
+      FetchAPI,
+    } from '../../services/utils/fetchAPI';
+
+    import { SignUpPostType } from './SignUp.component.types';
+
+    function useInputState(initialValue: string = '') {
+      const [value, setValue] = useState<string>(initialValue);
+      function handlechange(event: ChangeEvent<HTMLInputElement>) {
+        setValue(event.target.value);
+      }
+
+      return {
+        value,
+        onchange: handlechange,
+      };
+    }
+
+    function checkIfButtonIsDisabled(password: string, passwordRepeat: string) {
+      return !(password && passwordRepeat)
+        || password !== passwordRepeat;
+    }
+
+    export function SignUp() {
+      const userNameInput = useInputState();
+      const emailInput = useInputState();
+      const passwordInput = useInputState();
+      const passwordRepeatInput = useInputState();
+
+      const isDisabled = checkIfButtonIsDisabled(
+        passwordInput.value,
+        passwordRepeatInput.value,
+      );
+
+      async function handleSubmit(event: React.MouseEvent<HTMLButtonElement>) {
+        event.preventDefault();
+        const bodyPost: SignUpPostType = {
+          username: userNameInput.value,
+          email: emailInput.value,
+          password: passwordInput.value,
+        };
+
+        const response = await FetchAPI.post('/users', bodyPost);
+
+        console.log(response);  //just log it for a moment
+      }
+
+      return (
+        <div>
+          <form>
+            <h1>Sign Up</h1>
+            <label htmlFor='userName'>User Name</label>
+            <input onChange={userNameInput.onchange} value={userNameInput.value} id='userName' />
+            <label htmlFor='email'>Email</label>
+            <input onChange={emailInput.onchange} value={emailInput.value} id='email' />
+            <label htmlFor='password'>Password</label>
+            <input onChange={passwordInput.onchange} value={passwordInput.value} id='password' type='password' />
+            <label htmlFor='passwordRepeat'>Password Repeat</label>
+            <input onChange={passwordRepeatInput.onchange} value={passwordRepeatInput.value}
+              id='passwordRepeat' type='password'
+            />
+            <button onClick={handleSubmit} disabled={isDisabled} >Sign Up</button>
+          </form>
+        </div>
+      );
+    }
+    ```
+- $
+- $
+
 
 
 # Journal
