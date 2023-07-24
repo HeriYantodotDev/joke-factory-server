@@ -1,5 +1,13 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { SignUp } from '../pages/SignUp/SignUp.component';
+
+function setup(jsx: JSX.Element) {
+  return {
+    user: userEvent.setup(),
+    ...render(jsx),
+  }
+}
 
 describe('Sign Up Page', () => {
   describe('Layout', () => {
@@ -76,5 +84,19 @@ describe('Sign Up Page', () => {
 
 
 
+  });
+
+  describe('Interaction', () => {
+    test('enables the button when password and password repeat has the same value ', async () => {
+      const { user } = setup(< SignUp />);
+      const passwordInput = screen.getByLabelText('Password');
+      const passwordRepeatinput = screen.getByLabelText('Password Repeat');
+
+      await user.type(passwordInput, 'T3rl4lu@123');
+      await user.type(passwordRepeatinput, 'T3rl4lu@123');
+      const button = screen.queryByRole('button', { name: 'Sign Up' });
+      expect(button).toBeEnabled();
+
+    });
   });
 });
