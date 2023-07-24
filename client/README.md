@@ -57,7 +57,7 @@ I'm documenting the process I'm creating this for my future reference.
 - Sign Up Form Layout
   This is a very simple test to check the layout. So just check the basic layout.
   - Test:
-    ```
+    ``
       describe('Layout', () => {
       test('has a header', () => {
         render(<SignUp />);
@@ -150,6 +150,77 @@ I'm documenting the process I'm creating this for my future reference.
         );
       }
     ```
+
+- Form: Input Processing
+  - The button in this form is disable initially. Let's make the button is enable after the password & password repeat has the same value.
+    - test
+      ```
+      describe('Interaction', () => {
+        test('enables the button when password and password repeat has the same value ', async () => {
+          const { user } = setup(< SignUp />);
+          const passwordInput = screen.getByLabelText('Password');
+          const passwordRepeatinput = screen.getByLabelText('Password Repeat');
+
+          await user.type(passwordInput, 'T3rl4lu@123');
+          await user.type(passwordRepeatinput, 'T3rl4lu@123');
+          const button = screen.queryByRole('button', { name: 'Sign Up' });
+          expect(button).toBeEnabled();
+
+        });
+      });
+      
+      ```
+    - implementation 
+      As you can see above, we're using React State to update the value of the password. We're using
+      custom hooks for the sake of readibility and maintainability. Then to check for whether the button should be disabled or not, we simply check everytime the component is rerendered. Everytime we change the state, React will rerender the component. 
+      ```
+      import { ChangeEvent, useState } from 'react';
+
+      function usePasswordInputState(initialValue: string = '') {
+        const [value, setValue] = useState<string>(initialValue);
+        function handlechange(event: ChangeEvent<HTMLInputElement>) {
+          setValue(event.target.value);
+        }
+
+        return {
+          value,
+          onchange: handlechange,
+        };
+      }
+
+      function checkIfButtonIsDisabled(password: string, passwordRepeat: string) {
+        return !(password && passwordRepeat)
+          || password !== passwordRepeat;
+      }
+
+      export function SignUp() {
+        const passwordInput = usePasswordInputState();
+        const passwordRepeatInput = usePasswordInputState();
+
+        const isDisabled = checkIfButtonIsDisabled(
+          passwordInput.value,
+          passwordRepeatInput.value,
+        );
+
+        return (
+          <div>
+            <h1>Sign Up</h1>
+            <label htmlFor='userName'>User Name</label>
+            <input id='userName' />
+            <label htmlFor='email'>Email</label>
+            <input id='email' />
+            <label htmlFor='password'>Password</label>
+            <input onChange={passwordInput.onchange} value={passwordInput.value} id='password' type='password' />
+            <label htmlFor='passwordRepeat'>Password Repeat</label>
+            <input onChange={passwordRepeatInput.onchange} value={passwordRepeatInput.value}
+              id='passwordRepeat' type='password'
+            />
+            <button disabled={isDisabled} >Sign Up</button>
+          </div>
+        );
+      }
+      ```
+  - 
 
 - 
 
