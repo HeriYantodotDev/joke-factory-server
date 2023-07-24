@@ -1,6 +1,12 @@
-import { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 
-function usePasswordInputState(initialValue: string = '') {
+import {
+  FetchAPI,
+} from '../../services/utils/fetchAPI';
+
+import { SignUpPostType } from './SignUp.component.types';
+
+function useInputState(initialValue: string = '') {
   const [value, setValue] = useState<string>(initialValue);
   function handlechange(event: ChangeEvent<HTMLInputElement>) {
     setValue(event.target.value);
@@ -18,28 +24,45 @@ function checkIfButtonIsDisabled(password: string, passwordRepeat: string) {
 }
 
 export function SignUp() {
-  const passwordInput = usePasswordInputState();
-  const passwordRepeatInput = usePasswordInputState();
+  const userNameInput = useInputState();
+  const emailInput = useInputState();
+  const passwordInput = useInputState();
+  const passwordRepeatInput = useInputState();
 
   const isDisabled = checkIfButtonIsDisabled(
     passwordInput.value,
     passwordRepeatInput.value,
   );
 
+  async function handleSubmit(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    const bodyPost: SignUpPostType = {
+      username: userNameInput.value,
+      email: emailInput.value,
+      password: passwordInput.value,
+    };
+
+    const response = await FetchAPI.post('/users', bodyPost);
+
+    console.log(response);  //just log it for a moment
+  }
+
   return (
     <div>
-      <h1>Sign Up</h1>
-      <label htmlFor='userName'>User Name</label>
-      <input id='userName' />
-      <label htmlFor='email'>Email</label>
-      <input id='email' />
-      <label htmlFor='password'>Password</label>
-      <input onChange={passwordInput.onchange} value={passwordInput.value} id='password' type='password' />
-      <label htmlFor='passwordRepeat'>Password Repeat</label>
-      <input onChange={passwordRepeatInput.onchange} value={passwordRepeatInput.value}
-        id='passwordRepeat' type='password'
-      />
-      <button disabled={isDisabled} >Sign Up</button>
+      <form>
+        <h1>Sign Up</h1>
+        <label htmlFor='userName'>User Name</label>
+        <input onChange={userNameInput.onchange} value={userNameInput.value} id='userName' />
+        <label htmlFor='email'>Email</label>
+        <input onChange={emailInput.onchange} value={emailInput.value} id='email' />
+        <label htmlFor='password'>Password</label>
+        <input onChange={passwordInput.onchange} value={passwordInput.value} id='password' type='password' />
+        <label htmlFor='passwordRepeat'>Password Repeat</label>
+        <input onChange={passwordRepeatInput.onchange} value={passwordRepeatInput.value}
+          id='passwordRepeat' type='password'
+        />
+        <button onClick={handleSubmit} disabled={isDisabled} >Sign Up</button>
+      </form>
     </div>
   );
 }

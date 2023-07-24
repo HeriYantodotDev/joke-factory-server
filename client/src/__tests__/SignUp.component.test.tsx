@@ -6,8 +6,15 @@ function setup(jsx: JSX.Element) {
   return {
     user: userEvent.setup(),
     ...render(jsx),
-  }
+  };
 }
+
+const signUpNewUserData = {
+  username: 'test1',
+  email: 'test1@gmail.com',
+  password: 'T3rl4lu@123',
+};
+
 
 describe('Sign Up Page', () => {
   describe('Layout', () => {
@@ -92,10 +99,38 @@ describe('Sign Up Page', () => {
       const passwordInput = screen.getByLabelText('Password');
       const passwordRepeatinput = screen.getByLabelText('Password Repeat');
 
-      await user.type(passwordInput, 'T3rl4lu@123');
-      await user.type(passwordRepeatinput, 'T3rl4lu@123');
+      await user.type(passwordInput, signUpNewUserData.password);
+      await user.type(passwordRepeatinput, signUpNewUserData.password);
       const button = screen.queryByRole('button', { name: 'Sign Up' });
       expect(button).toBeEnabled();
+
+    });
+
+    test('sends username, email, and password to backend after clicking the button', async () => {
+      const { user } = setup(< SignUp />);
+      const userNameInput = screen.getByLabelText('User Name');
+      const emailInput = screen.getByLabelText('Email');
+      const passwordInput = screen.getByLabelText('Password');
+      const passwordRepeatinput = screen.getByLabelText('Password Repeat');
+
+      await user.type(userNameInput, signUpNewUserData.username);
+      await user.type(emailInput, signUpNewUserData.email);
+      await user.type(passwordInput, signUpNewUserData.password);
+      await user.type(passwordRepeatinput, signUpNewUserData.password);
+      const button = screen.queryByRole('button', { name: 'Sign Up' });
+      if (!button) {
+        fail('Button is not found');
+      }
+
+      const mockFn = jest.fn();
+
+      global.fetch = mockFn;
+
+      await user.click(button);
+
+      const firstCallOfMockFn = mockFn.mock.calls[0];
+      const body = JSON.parse(firstCallOfMockFn[1].body);
+      expect(body).toEqual(signUpNewUserData);
 
     });
   });
