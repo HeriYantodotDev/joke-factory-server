@@ -347,9 +347,69 @@ I'm documenting the process I'm creating this for my future reference.
       );
     }
     ```
-- $
-- $
+- Mock Service Worker (WSW)
+  We must be creating out test, as close as possible to real user interaction. 
+  Instead for mocking we can use this library: [`mswjs.io`](https://mswjs.io/)
+  
+  - So let's use it. First let's install it:  `npm i msw --save-dev`
+  - In CRA, it already provides polyfill for fetch at node environtment, however Vite doesn't. So we have to install a library to polyfill it. `npm i whatwg-fetch --save-dev`. Here's the detail how to set it up [jestSetUp](https://github.com/mswjs/examples/blob/master/examples/with-jest/jest.setup.js) 
+  - now we have to import it like this : 
+    ```
+    // Polyfill "window.fetch" used in the React component.
+    import 'whatwg-fetch';
 
+    // Extend Jest "expect" functionality with Testing Library assertions.
+    import '@testing-library/jest-dom';
+    ```
+    The problem is that the Data Type for whatwg-fetch is deprecated. However it's still working. 
+  - In order to check the body of the request in the server we have to implement it directly in our test: 
+    ```
+    import 'whatwg-fetch';
+
+    // Extend Jest "expect" functionality with Testing Library assertions.
+    import '@testing-library/jest-dom';
+
+    import { rest } from 'msw';
+    import { API_ROOT_URL } from '../services/utils/fetchAPI';
+    import { setupServer } from 'msw/node';
+    test('sends username, email, and password to backend after clicking the button', async () => {
+          let requestbody;
+          const server = setupServer(
+            rest.post(API_ROOT_URL + '/users', async (req, res, ctx) => {
+              requestbody = await req.json();
+              return res(ctx.status(200));
+            }),
+          );
+          server.listen();
+          const { user } = setup(< SignUp />);
+          const userNameInput = screen.getByLabelText('User Name');
+          const emailInput = screen.getByLabelText('Email');
+          const passwordInput = screen.getByLabelText('Password');
+          const passwordRepeatinput = screen.getByLabelText('Password Repeat');
+
+          await user.type(userNameInput, signUpNewUserData.username);
+          await user.type(emailInput, signUpNewUserData.email);
+          await user.type(passwordInput, signUpNewUserData.password);
+          await user.type(passwordRepeatinput, signUpNewUserData.password);
+          const button = screen.queryByRole('button', { name: 'Sign Up' });
+          if (!button) {
+            fail('Button is not found');
+          }
+
+          await user.click(button);
+
+          expect(requestbody).toEqual(signUpNewUserData);
+
+          server.close();
+        });
+    ```
+  We don't have to change any implementations, since we're just replacing Mock with the real interaction with the server (msw). The test is a little bit mess up but let's refactor it later. 
+- $
+- $
+- $
+- $
+- $
+- $
 
 
 # Journal

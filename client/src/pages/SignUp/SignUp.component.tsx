@@ -44,7 +44,7 @@ export function SignUp() {
 
     const response = await FetchAPI.post('/users', bodyPost);
 
-    console.log(response);  //just log it for a moment
+    response;  //just log it for a moment
   }
 
   return (
