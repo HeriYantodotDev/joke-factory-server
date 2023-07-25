@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Lugrasimo', 'Arial', 'sans-serif'],
+        sans: ['Tektur', 'Arial', 'sans-serif'],
       },
     },
   },

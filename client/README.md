@@ -464,10 +464,8 @@ I'm documenting the process I'm creating this for my future reference.
     @tailwind components;
     @tailwind utilities;
   ```
-
-  That's it. Now we can use it. 
+  That's it. Now we can use it. Here's the documentation [tailwindCSS](https://tailwindcss.com/)
   
-
 - $
 - $
 - $

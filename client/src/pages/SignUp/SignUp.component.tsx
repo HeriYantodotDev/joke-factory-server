@@ -6,6 +6,9 @@ import {
 
 import { SignUpPostType } from './SignUp.component.types';
 
+import { FormInput } from '../../components/FormInput/FormInput.component';
+import { Button } from '../../components/Button/Button.component';
+
 function useInputState(initialValue: string = '') {
   const [value, setValue] = useState<string>(initialValue);
   function handlechange(event: ChangeEvent<HTMLInputElement>) {
@@ -48,24 +51,50 @@ export function SignUp() {
   }
 
   return (
-    <div>
-      <form>
-        <h1 className='text-3xl ' >Sign Up</h1>
-        <label htmlFor='userName'>User Name</label>
-        <input onChange={userNameInput.onchange} value={userNameInput.value} id='userName' 
-          className=' focus:bg-violet-100 border border-gray-300 rounded-full px-2 py-1 ' />
-        <label htmlFor='email'>Email</label>
-        <input onChange={emailInput.onchange} value={emailInput.value} id='email' 
-          className='focus:bg-violet-100 border border-gray-300 rounded-full px-2 py-1' />
-        <label htmlFor='password'>Password</label>
-        <input onChange={passwordInput.onchange} value={passwordInput.value} id='password' type='password' 
-          className='focus:bg-violet-100 border border-gray-300 rounded-full px-2 py-1' />
-        <label htmlFor='passwordRepeat'>Password Repeat</label>
-        <input onChange={passwordRepeatInput.onchange} value={passwordRepeatInput.value}
-          id='passwordRepeat' type='password'
-          className='focus:bg-violet-100 border border-gray-300 rounded-full px-2 py-1' 
-        />
-        <button onClick={handleSubmit} disabled={isDisabled} >Sign Up</button>
+    <div className='flex justify-center items-center' >
+      <form className='w-96 text-center border'>
+        <div className='flex bg-gray-100 justify-center items-center h-20 border-b-2 ' >
+          <h1 className='text-4xl font-bold text-blue-600 ' >
+            Sign Up
+          </h1>
+        </div>
+
+        <div className='mx-6 my-6'>
+          <FormInput 
+            labelName='User Name'
+            htmlFor='userName'
+            onChange={userNameInput.onchange}
+            value={userNameInput.value}
+            id='userName'
+          />
+          <FormInput 
+            labelName='Email'
+            htmlFor='email'
+            onChange={emailInput.onchange}
+            value={emailInput.value}
+            id='email'
+          />
+          <FormInput 
+            labelName='Password'
+            htmlFor='password'
+            onChange={passwordInput.onchange}
+            value={passwordInput.value}
+            id='password'
+            type='password'
+          />
+          <FormInput 
+            labelName='Password Repeat'
+            htmlFor='passwordRepeat'
+            onChange={passwordRepeatInput.onchange}
+            value={passwordRepeatInput.value}
+            id='passwordRepeat'
+            type='password'
+          />
+          <Button onClick={handleSubmit} disabled={isDisabled}>
+            Sign Up
+          </Button>
+        </div>
+
       </form>
     </div>
   );
