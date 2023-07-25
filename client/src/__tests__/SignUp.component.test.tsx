@@ -116,7 +116,7 @@ describe('Sign Up Page', () => {
 
     });
 
-    test.only('sends username, email, and password to backend after clicking the button', async () => {
+    test('sends username, email, and password to backend after clicking the button', async () => {
       let requestbody;
       const server = setupServer(
         rest.post(API_ROOT_URL + '/users', async (req, res, ctx) => {

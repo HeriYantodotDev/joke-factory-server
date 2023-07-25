@@ -404,7 +404,32 @@ I'm documenting the process I'm creating this for my future reference.
         });
     ```
   We don't have to change any implementations, since we're just replacing Mock with the real interaction with the server (msw). The test is a little bit mess up but let's refactor it later. 
-- $
+- Setting up the root URL
+  Since we have multiple environments, we have to set it to determine the root URL. So let's set it up in the `fetchAPI.ts` file like this. Luckily, VITE already sets up the default NODE_ENV for each development, test, or production. 
+  ```
+  const env = process.env.NODE_ENV;
+
+  const root = 
+    env === 'development'
+      ? 'http://localhost:3000'
+      : env === 'test'
+        ? 'http://localhost:5173'
+        : '';
+
+  export const API_ROOT_URL = root + '/api/1.0';
+
+  export class FetchAPI {
+    static async post(apiURL: string, body: object) {
+      return await fetch(API_ROOT_URL + apiURL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+    }
+  }
+  ```
 - $
 - $
 - $
