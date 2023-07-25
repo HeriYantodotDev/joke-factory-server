@@ -98,8 +98,6 @@ describe('Sign Up Page', () => {
       expect(button).toBeDisabled();
     });
 
-
-
   });
 
   describe('Interaction', () => {
@@ -118,8 +116,10 @@ describe('Sign Up Page', () => {
 
     test('sends username, email, and password to backend after clicking the button', async () => {
       let requestbody;
+
       const server = setupServer(
         rest.post(API_ROOT_URL + '/users', async (req, res, ctx) => {
+
           requestbody = await req.json();
           return res(ctx.status(200));
         }),
@@ -136,6 +136,7 @@ describe('Sign Up Page', () => {
       await user.type(passwordInput, signUpNewUserData.password);
       await user.type(passwordRepeatinput, signUpNewUserData.password);
       const button = screen.queryByRole('button', { name: 'Sign Up' });
+
       if (!button) {
         fail('Button is not found');
       }

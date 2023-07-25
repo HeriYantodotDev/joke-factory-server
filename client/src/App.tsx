@@ -2,7 +2,7 @@ import { SignUp } from './pages/SignUp/SignUp.component';
 
 function App() {
   return (
-    <div className=' container mx-7'>
+    <div className='mx-7 mt-10 mb-10'>
       <SignUp />
     </div>
   );
