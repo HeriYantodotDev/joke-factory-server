@@ -50,16 +50,20 @@ export function SignUp() {
   return (
     <div>
       <form>
-        <h1>Sign Up</h1>
+        <h1 className='text-3xl ' >Sign Up</h1>
         <label htmlFor='userName'>User Name</label>
-        <input onChange={userNameInput.onchange} value={userNameInput.value} id='userName' />
+        <input onChange={userNameInput.onchange} value={userNameInput.value} id='userName' 
+          className=' focus:bg-violet-100 border border-gray-300 rounded-full px-2 py-1 ' />
         <label htmlFor='email'>Email</label>
-        <input onChange={emailInput.onchange} value={emailInput.value} id='email' />
+        <input onChange={emailInput.onchange} value={emailInput.value} id='email' 
+          className='focus:bg-violet-100 border border-gray-300 rounded-full px-2 py-1' />
         <label htmlFor='password'>Password</label>
-        <input onChange={passwordInput.onchange} value={passwordInput.value} id='password' type='password' />
+        <input onChange={passwordInput.onchange} value={passwordInput.value} id='password' type='password' 
+          className='focus:bg-violet-100 border border-gray-300 rounded-full px-2 py-1' />
         <label htmlFor='passwordRepeat'>Password Repeat</label>
         <input onChange={passwordRepeatInput.onchange} value={passwordRepeatInput.value}
           id='passwordRepeat' type='password'
+          className='focus:bg-violet-100 border border-gray-300 rounded-full px-2 py-1' 
         />
         <button onClick={handleSubmit} disabled={isDisabled} >Sign Up</button>
       </form>

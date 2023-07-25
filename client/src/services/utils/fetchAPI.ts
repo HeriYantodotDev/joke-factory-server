@@ -1,7 +1,5 @@
 const env = process.env.NODE_ENV;
 
-console.log(env);
-
 const root = 
   env === 'development'
     ? 'http://localhost:3000'

@@ -1,6 +1,8 @@
 # [Working In Progress] Joke Factory Client
 
 # The React App Overview
+- Styling
+  I'm using TailwindCSS.
 
 # Development
 
@@ -430,7 +432,42 @@ I'm documenting the process I'm creating this for my future reference.
     }
   }
   ```
-- $
+- Style
+  For style, I'm using TailwindCSS. 
+  Here's to start it up: 
+  ```
+  npm install tailwindcss @tailwindcss/typography @tailwindcss/forms postcss autoprefixer --save-dev
+  npx tailwindcss init -p
+  ```
+  Then create a file `tailwind.config.js` (for the font I'm using Google Font)
+  ```
+  /** @type {import('tailwindcss').Config} */
+  export default {
+    content: [
+      './index.html',
+      './src/**/*.{js,ts,jsx,tsx}',
+    ],
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Lugrasimo', 'Arial', 'sans-serif'],
+        },
+      },
+    },
+    plugins: [],
+  };
+
+  ```
+  Now let's add `index.css` to the main app, and here it is : 
+  ```
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+  ```
+
+  That's it. Now we can use it. 
+  
+
 - $
 - $
 - $
