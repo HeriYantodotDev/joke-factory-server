@@ -2,6 +2,16 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SignUp } from '../pages/SignUp/SignUp.component';
 
+// Polyfill "window.fetch" used in the React component.
+import 'whatwg-fetch';
+
+// Extend Jest "expect" functionality with Testing Library assertions.
+import '@testing-library/jest-dom';
+
+import { rest } from 'msw';
+import { API_ROOT_URL } from '../services/utils/fetchAPI';
+import { setupServer } from 'msw/node';
+
 function setup(jsx: JSX.Element) {
   return {
     user: userEvent.setup(),
@@ -14,7 +24,6 @@ const signUpNewUserData = {
   email: 'test1@gmail.com',
   password: 'T3rl4lu@123',
 };
-
 
 describe('Sign Up Page', () => {
   describe('Layout', () => {
@@ -94,6 +103,7 @@ describe('Sign Up Page', () => {
   });
 
   describe('Interaction', () => {
+
     test('enables the button when password and password repeat has the same value ', async () => {
       const { user } = setup(< SignUp />);
       const passwordInput = screen.getByLabelText('Password');
@@ -106,7 +116,15 @@ describe('Sign Up Page', () => {
 
     });
 
-    test('sends username, email, and password to backend after clicking the button', async () => {
+    test.only('sends username, email, and password to backend after clicking the button', async () => {
+      let requestbody;
+      const server = setupServer(
+        rest.post(API_ROOT_URL + '/users', async (req, res, ctx) => {
+          requestbody = await req.json();
+          return res(ctx.status(200));
+        }),
+      );
+      server.listen();
       const { user } = setup(< SignUp />);
       const userNameInput = screen.getByLabelText('User Name');
       const emailInput = screen.getByLabelText('Email');
@@ -122,16 +140,11 @@ describe('Sign Up Page', () => {
         fail('Button is not found');
       }
 
-      const mockFn = jest.fn();
-
-      global.fetch = mockFn;
-
       await user.click(button);
 
-      const firstCallOfMockFn = mockFn.mock.calls[0];
-      const body = JSON.parse(firstCallOfMockFn[1].body);
-      expect(body).toEqual(signUpNewUserData);
+      expect(requestbody).toEqual(signUpNewUserData);
 
+      server.close();
     });
   });
 });
