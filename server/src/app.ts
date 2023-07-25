@@ -25,6 +25,8 @@ import flash from 'connect-flash';
 
 import { tokenAuthenticationMW } from './utils';
 
+import cors from 'cors';
+
 export const app = express();
 
 const LOCAL_OPTIONS = {
@@ -38,6 +40,7 @@ class startupMiddleware {
     this.configTokenMW();
     this.configi18Next();
     this.configPassport();
+    this.enableCors();
     this.enableSession();
     this.enableFlash();
     this.enablePassport();
@@ -148,6 +151,14 @@ class startupMiddleware {
 
   private static enableFlash(){
     app.use(flash());
+  }
+
+  private static enableCors() {
+    app.use(
+      cors({
+        origin: 'http://localhost:5173',
+      })
+    );
   }
 
 
