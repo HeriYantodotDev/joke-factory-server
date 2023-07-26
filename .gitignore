@@ -1,1 +1,7 @@
-.vscode/
+dist/
+node_modules/
+build/
+.env
+coverage/
+test.sqlite
+database.sqlite

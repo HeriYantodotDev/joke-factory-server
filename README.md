@@ -1,5 +1,7 @@
-# Joke Factory Project
+# Joke Factory Project Server
 The Joke Factory project is a simple platform for users to share and read jokes. Users can submit their own jokes, review existing jokes, and leave comments.
+
+This is the backend for the project.
 
 This projects serves as my practice to learn about Test-Driven Development (TDD) in TypeScript. Through TDD, I'm practicing to produce clean code by regularly refactoring my codebase. 
 
