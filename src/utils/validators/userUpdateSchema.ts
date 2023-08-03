@@ -1,5 +1,19 @@
-import Joi from 'joi';
+import Joi,  { CustomHelpers } from 'joi';
 import { Locales } from '../Enum';
+
+function validateImage(value: string, helpers: CustomHelpers) {
+
+  if (!value) {
+    return value;
+  }
+
+  const buffer = Buffer.from(value, 'base64');
+
+  if (buffer.length > 2 * 1024 * 1024) {
+    return helpers.error('any.invalid');
+  } 
+  return value;
+}
 
 export const userUpdateSchema = Joi.object({
   username: Joi.string()
@@ -13,7 +27,12 @@ export const userUpdateSchema = Joi.object({
       'string.min' : Locales.userSizeMin,
       'string.max' : Locales.userSizeMax,
     }),
-  image: Joi.any().optional(),
+  image: Joi.any()
+    .optional()
+    .custom(validateImage)
+    .messages({
+      'any.invalid': Locales.profileImageSize, 
+    }),
 }).options({
     allowUnknown: false,
 }).messages({

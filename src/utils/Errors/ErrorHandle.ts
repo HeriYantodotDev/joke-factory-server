@@ -7,13 +7,19 @@ import {
   ErrorUserNotFound,
   ErrorAuthFailed,
   ErrorAuthForbidden,
-  ErrorEmailNotInuse
+  ErrorEmailNotInuse,
+  ErrorEntityTooLarge
 } from './ErrorClass';
 import { ErrorResponse, ValidationErrorResponse } from '../../models';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ErrorHandle(err: unknown, req: Request, res: Response, next: NextFunction ) {
   const path = req.originalUrl;
+
+  if (err instanceof ErrorEntityTooLarge) {
+    res.status(err.code).send(generateResponse(path, err.message));
+    return;
+  }
   
   if (err instanceof ErrorBodyValidation) {
     const validationErrors: ValidationErrorResponse['validationErrors'] = err.validationErrors;

@@ -330,4 +330,132 @@ describe('User Update', () => {
     expect(response.status).toBe(400);
     expect(response.body.validationErrors.username).toBe(message);
   });
+
+  test('returns 200 when image size is exactly 2mb', async () => {
+    const fileWithSize2MB = 'a'.repeat(1024 * 1024 * 2);
+    const base64 = Buffer.from(fileWithSize2MB).toString('base64');
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: base64,
+    };
+
+    const response = await putUser(
+      userList[0].id, 
+      validUpdate, 
+      { 
+        auth : { 
+          email : emailUser1, 
+          password: passwordUser1,
+        },
+      }
+    );
+
+    expect(response.status).toBe(200);
+    
+  });
+
+  test('returns 400 when image size exceeds 2mb', async () => {
+    const fileWithSize2MB = 'a'.repeat(1024 * 1024 * 2) + 'a';
+    const base64 = Buffer.from(fileWithSize2MB).toString('base64');
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+
+    const invalidUpdate = { 
+      username: 'user1-updated',
+      image: base64,
+    };
+
+    const response = await putUser(
+      userList[0].id, 
+      invalidUpdate, 
+      { 
+        auth : { 
+          email : emailUser1, 
+          password: passwordUser1,
+        },
+      }
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  test('keeps the old image after user only updates username', async() => {
+    const fileInBase64 = readFileAsBase64();
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    const firstImage = response.body.image;
+
+    await putUser(
+      userList[0].id, 
+      {
+        username: 'user1-new-updated',
+      }, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    const profileImagePath = path.join(profileDirectory, firstImage );
+
+    expect(fs.existsSync(profileImagePath)).toBe(true);
+
+    const userInDB = await User.findOne({
+      where: {
+        id: userList[0].id,
+      },
+    });
+
+    expect(userInDB?.image).toBe(firstImage);
+
+  });
+
+  test.each`
+  lang        | message
+  ${'id'}     | ${id.profileImageSize}
+  ${'en'}     | ${en.profileImageSize}
+  `('returns $message when file size > 2MB when the language is $lang', async({lang, message}) => {
+    const fileWithSize2MB = 'a'.repeat(1024 * 1024 * 2) + 'a';
+    const base64 = Buffer.from(fileWithSize2MB).toString('base64');
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+
+    const invalidUpdate = { 
+      username: 'user1-updated',
+      image: base64,
+    };
+
+    const response = await putUser(
+      userList[0].id, 
+      invalidUpdate, 
+      { 
+        auth : { 
+          email : emailUser1, 
+          password: passwordUser1,
+        },
+        language: lang,
+      }
+    );
+
+    expect(response.body.validationErrors.image).toBe(message);
+  });
+
 });

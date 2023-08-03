@@ -828,8 +828,304 @@ Let's move to the next section then.
 
 ## File Size Validation
 
+If we try to upload bigger image more than 100kb then we will encounter an error. Here's the full documentation : [express doc](https://expressjs.com/en/api.html#express.json). 
 
+Now let's try to set our own limit to 2MB. Here's the test:
 
+```
+  test('returns 200 when image size is exactly 200mb', async () => {
+    const fileWithSize2MB = 'a'.repeat(1024 * 1024 * 2);
+    const base64 = Buffer.from(fileWithSize2MB).toString('base64');
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: base64,
+    };
+
+    const response = await putUser(
+      userList[0].id, 
+      validUpdate, 
+      { 
+        auth : { 
+          email : emailUser1, 
+          password: passwordUser1,
+        },
+      }
+    );
+
+    expect(response.status).toBe(200);
+    
+  });
+```
+
+Now let's add the buffer. In the `app.ts` we're adding the buffer like this : 
+```
+  app.use(express.json({limit: '3mb'}));
+```
+
+Okay now let's add the test case : 
+
+```
+  test('returns 400 when image size exceeds 2mb', async () => {
+    const fileWithSize2MB = 'a'.repeat(1024 * 1024 * 2) + 'a';
+    const base64 = Buffer.from(fileWithSize2MB).toString('base64');
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+
+    const invalidUpdate = { 
+      username: 'user1-updated',
+      image: base64,
+    };
+
+    const response = await putUser(
+      userList[0].id, 
+      invalidUpdate, 
+      { 
+        auth : { 
+          email : emailUser1, 
+          password: passwordUser1,
+        },
+      }
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  test('keeps the old image after user only updates username', async() => {
+    const fileInBase64 = readFileAsBase64();
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    const firstImage = response.body.image;
+
+    await putUser(
+      userList[0].id, 
+      {
+        username: 'user1-new-updated',
+      }, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    const profileImagePath = path.join(profileDirectory, firstImage );
+
+    expect(fs.existsSync(profileImagePath)).toBe(true);
+
+    const userInDB = await User.findOne({
+      where: {
+        id: userList[0].id,
+      },
+    });
+
+    expect(userInDB?.image).toBe(firstImage);
+
+  });
+```
+
+Test case above check if we add the image above 2mb, and also ensure that it won't break our previous implementation. Since now we're validating the image, it will return the value if it passes the validation, even though there's no image in the body. 
+
+Here's the implementation. This is in the schema for validating the body. I added the custom validation to check the size, however after this it returns the value in the body. 
+
+```
+import Joi,  { CustomHelpers } from 'joi';
+import { Locales } from '../Enum';
+
+function validateImage(value: string, helpers: CustomHelpers) {
+
+  if (!value) {
+    return value;
+  }
+
+  const buffer = Buffer.from(value, 'base64');
+
+  if (buffer.length > 2 * 1024 * 1024) {
+    return helpers.error('any.invalid');
+  } 
+  return value;
+}
+
+export const userUpdateSchema = Joi.object({
+  username: Joi.string()
+    .required()
+    .min(3)
+    .max(30)
+    .messages({
+      'any.required': Locales.errorUsernameEmpty,
+      'string.empty': Locales.errorUsernameEmpty,
+      'string.base': Locales.errorUsernameNull,
+      'string.min' : Locales.userSizeMin,
+      'string.max' : Locales.userSizeMax,
+    }),
+  image: Joi.any()
+    .optional()
+    .custom(validateImage)
+    .messages({
+      'any.invalid': 'The image is too big', 
+    }),
+}).options({
+    allowUnknown: false,
+}).messages({
+  'object.unknown': Locales.customFieldNotAllowed,
+});
+
+```
+
+Now in the `user.helper.model.ts` in the `updateUserById`, we're changing a little bit for the implementation: 
+
+```
+  public static async updateUserByID(
+    idParams: number, 
+    body: ExpectedRequestBodyhttpPutUserById
+  ): Promise<UserDataFromDB> {
+    const user = await this.getActiveUserByID(idParams);
+
+    if (!user) {
+      throw new ErrorUserNotFound();
+    }
+
+    if (body.image) {
+      if (user.image) {
+        await FileUtils.deleteProfileImage(user.image);
+      }
+
+      const fileName = await FileUtils.saveProfileImage(body.image);
+      user.image = fileName;
+    }
+
+    user.username = body.username;
+
+    await user.save();
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      image: user.image,
+    };
+  }
+```
+
+Please take a look at the implementation above. We only delete the previous file, create a new file, and assign a new file name if the body contains image. 
+Why? Since in the body validation we check if the image size is above 2mb, and returns the value which is null. 
+
+Now let's test for the validation error message: 
+
+  test.each`
+  lang        | message
+  ${'id'}     | ${id.profileImageSize}
+  ${'en'}     | ${en.profileImageSize}
+  `('returns $message when file size > 2MB when the language is $lang', async({lang, message}) => {
+    const fileWithSize2MB = 'a'.repeat(1024 * 1024 * 2) + 'a';
+    const base64 = Buffer.from(fileWithSize2MB).toString('base64');
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+
+    const invalidUpdate = { 
+      username: 'user1-updated',
+      image: base64,
+    };
+
+    const response = await putUser(
+      userList[0].id, 
+      invalidUpdate, 
+      { 
+        auth : { 
+          email : emailUser1, 
+          password: passwordUser1,
+        },
+        language: lang,
+      }
+    );
+
+    expect(response.body.validationErrors.image).toBe(message);
+  });
+
+  For the implementation first of all we have to add translation both in 'en' and also 'id'. Then all the Locales Enum.
+
+  After that we just need to add the error message like this in the Joi Schema: 
+
+  ```
+    image: Joi.any()
+    .optional()
+    .custom(validateImage)
+    .messages({
+      'any.invalid': Locales.profileImageSize, 
+    }),
+  ```
+
+  Great, the final touch is in this middleware: `checkingJSONRequest.ts` in the `app.ts`: 
+  ```
+  export function checkingJSONRequest(): ErrorRequestHandler {
+  return function (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    err: any, 
+    req: Request, 
+    res: Response, 
+    next: NextFunction) {
+
+    if (!err) {
+      next();
+      return;
+    }
+    
+    if (err instanceof SyntaxError) {
+      const errorResponse: ErrorMessageInvalidJSON = {
+        error: 'Invalid JSON',
+        message: err.message,
+      };
+
+      res.status(400).send(errorResponse);
+      return;
+    } 
+
+    if (err.status === 413) {
+      ErrorHandle(new ErrorEntityTooLarge(err.message), req, res, next);
+      return;
+    }
+
+  };
+}
+  ```
+
+If it exceeds 3mb than express throws an error. We have to catch that if not the application will be broken. 
+
+Create a new error class: 
+
+```
+export class ErrorEntityTooLarge extends Error {
+  public code = 413;
+  constructor(message: string) {
+    super(message);
+  }
+}
+```
+
+And then create how to handle it without translation in the `ErrorHandle` : 
+
+```
+  if (err instanceof ErrorEntityTooLarge) {
+    res.status(err.code).send(generateResponse(path, err.message));
+    return;
+  }
+```
 
 ## File Type Validation
 
