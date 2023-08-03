@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import request from 'supertest';
 import { app } from '../app';
 import { User, Auth, UserHelperModel } from '../models';
@@ -7,12 +9,22 @@ import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 import fs from 'fs';
 import path from 'path';
-
 const emailUser1 = 'user1@gmail.com';
 const passwordUser1 = 'A4GuaN@SmZ';
 const randomPassword = 'JuJ*733H_SDsd@!';
 const validUpdate = { username: 'user1-updated' };
 const inValidUpdate = { empty: 'user1-updated' };
+
+
+const uploadDir = process.env.uploadDir;
+
+const profileDir = 'profile';
+
+if (!uploadDir) {
+  throw new Error('Please set up the uploadDir environment');
+}
+
+const profileDirectory = path.join('.', uploadDir, profileDir);
 
 beforeAll( async () => {
   await sequelize.sync();
@@ -25,6 +37,13 @@ beforeEach( async () => {
 
 afterAll(async () => {
   await sequelize.close();
+
+  const files = fs.readdirSync(profileDirectory);
+
+  for (const file of files){
+    fs.unlinkSync(path.join(profileDirectory, file));
+  }
+
 });
 
 async function putUser(
@@ -55,6 +74,12 @@ async function putUser(
   }
 
   return await agent2.send(body);
+}
+
+function readFileAsBase64() {
+  const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+  const fileInBase64 = fs.readFileSync(filePath, {encoding: 'base64'});
+  return fileInBase64;
 }
 
 describe('User Update', () => {
@@ -165,8 +190,7 @@ describe('User Update', () => {
   });
 
   test('saves the user image when update contains image as base64', async () => {
-    const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
-    const fileInBase64 = fs.readFileSync(filePath, {encoding: 'base64'});
+    const fileInBase64 = readFileAsBase64();
 
     const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
     
@@ -190,8 +214,7 @@ describe('User Update', () => {
   });
 
   test('returns success body having only id, username, email and image', async() => {
-    const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
-    const fileInBase64 = fs.readFileSync(filePath, {encoding: 'base64'});
+    const fileInBase64 = readFileAsBase64();
 
     const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
     
@@ -212,4 +235,35 @@ describe('User Update', () => {
     expect(Object.keys(response.body)).toEqual(['id', 'username', 'email', 'image']);
   });
 
+  test('saves the user image to upload folder and stores filename in user when update has image', async () => {
+    const fileInBase64 = readFileAsBase64();
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+      
+    const updatedUser = await UserHelperModel.getActiveUserByID(userList[0].id);
+
+    if (!updatedUser?.image) {
+      throw new Error('Please ensure there\'s an image file in this test');
+    }
+
+    const profileImagePath = path.join(profileDirectory, updatedUser.image );
+
+    expect(fs.existsSync(profileImagePath)).toBe(true);
+    
+  });
+  
 });
