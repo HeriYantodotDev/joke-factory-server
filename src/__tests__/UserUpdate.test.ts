@@ -258,5 +258,43 @@ describe('User Update', () => {
     expect(fs.existsSync(profileImagePath)).toBe(true);
     
   });
+
+  test('removed old picture after a user uploads a new one', async () => {
+    const fileInBase64 = readFileAsBase64();
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    const firstImage = response.body.image;
+
+    await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    const profileImagePath = path.join(profileDirectory, firstImage );
+
+    expect(fs.existsSync(profileImagePath)).toBe(false);
+    
+  });
+
+
   
 });

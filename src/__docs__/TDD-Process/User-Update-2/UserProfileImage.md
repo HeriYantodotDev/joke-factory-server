@@ -601,6 +601,92 @@ Now in the package.json we're adding the script like this :
 
 If we stop the test, then the script `posttest` will run automatically and clean up all of our folder 
 ## Replacing Old Image
+If a user uploads a new picture, we should remove the old one, and replace it with a new one. 
+So, let's add a new test for user update. 
+
+```
+test('removed old picture after a user uploads a new one', async () => {
+  const fileInBase64 = readFileAsBase64();
+
+  const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+  
+  const validUpdate = { 
+    username: 'user1-updated',
+    image: fileInBase64,
+  };
+  
+  const response = await putUser(
+    userList[0].id, 
+    validUpdate, 
+    {auth : { 
+      email : emailUser1, 
+      password: passwordUser1,
+    }}
+  );
+
+  const firstImage = response.body.image;
+
+  await putUser(
+    userList[0].id, 
+    validUpdate, 
+    {auth : { 
+      email : emailUser1, 
+      password: passwordUser1,
+    }}
+  );
+
+  const profileImagePath = path.join(profileDirectory, firstImage );
+
+  expect(fs.existsSync(profileImagePath)).toBe(false);
+  
+});
+```
+
+In the test above, we send a put request twice, and then we check in the local file in the backend to check whether the first image has been removed. 
+
+For the implementation, in the `user.helper.model` we check whether the image exists or not in the database, if exits, we remove it. 
+
+```
+  public static async updateUserByID(
+    idParams: number, 
+    body: ExpectedRequestBodyhttpPutUserById
+  ): Promise<UserDataFromDB> {
+    const user = await this.getActiveUserByID(idParams);
+
+    if (!user) {
+      throw new ErrorUserNotFound();
+    }
+
+    if (user.image) {
+      await FileUtils.deleteProfileImage(user.image);
+    }
+
+    if (body.image) {
+      const fileName = await FileUtils.saveProfileImage(body.image);
+      user.image = fileName;
+    }
+
+    user.username = body.username;
+
+    await user.save();
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      image: user.image,
+    };
+  }
+```
+
+And here's the sub function in the `FileUtil`:
+```
+  public static async deleteProfileImage(fileName: string) {
+    const filePath = path.join(profileFolder, fileName);
+    await fs.promises.unlink(filePath);
+  }
+```
+
 
 ## Username Validation
 
