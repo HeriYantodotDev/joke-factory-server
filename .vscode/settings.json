@@ -4,7 +4,4 @@
     "titleBar.activeBackground": "#3D3D5B",
     "titleBar.activeForeground": "#FCFCFD"
   },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
 }

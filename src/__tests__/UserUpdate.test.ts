@@ -37,13 +37,6 @@ beforeEach( async () => {
 
 afterAll(async () => {
   await sequelize.close();
-
-  const files = fs.readdirSync(profileDirectory);
-
-  for (const file of files){
-    fs.unlinkSync(path.join(profileDirectory, file));
-  }
-
 });
 
 async function putUser(

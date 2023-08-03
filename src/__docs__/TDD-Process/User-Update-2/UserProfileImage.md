@@ -565,6 +565,41 @@ It shows `304` not modified response if we tried to refresh the browser. The fil
 
 ## Cleaning Up the Folders
 
+Let's create a clean up test separated from our test file. 
+First let's code in the `afterAll` function within `UserUpdate.test.ts`, and move it to a separate file named `test-cleanup.ts`: 
+```
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+import fs from 'fs';
+import path from 'path';
+
+const uploadDir = process.env.uploadDir;
+
+const profileDir = 'profile';
+
+if (!uploadDir) {
+  throw new Error('Please set up the uploadDir environment');
+}
+
+const profileDirectory = path.join('.', uploadDir, profileDir);
+
+
+const files = fs.readdirSync(profileDirectory);
+
+for (const file of files){
+  fs.unlinkSync(path.join(profileDirectory, file));
+}
+
+```
+
+Now in the package.json we're adding the script like this : 
+
+```
+  "test": "NODE_ENV=test jest --runInBand --watchAll",
+  "posttest": "NODE_ENV=test ts-node src/test-cleanup.ts",
+```
+
+If we stop the test, then the script `posttest` will run automatically and clean up all of our folder 
 ## Replacing Old Image
 
 ## Username Validation
