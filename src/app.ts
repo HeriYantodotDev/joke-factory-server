@@ -110,6 +110,7 @@ class startupMiddleware {
           id: existingUser.id,
           username: existingUser.username,
           email: existingUser.email,
+          image: existingUser.image,
         };
 
         return done(null, userFromDB);

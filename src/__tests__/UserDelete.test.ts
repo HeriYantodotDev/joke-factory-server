@@ -125,7 +125,7 @@ describe('User Delete', () => {
       {token}
     );
 
-    const updatedUser = await UserHelperModel.getActiveUserByid(userList[0].id);
+    const updatedUser = await UserHelperModel.getActiveUserByID(userList[0].id);
     expect(updatedUser).toBeNull();
   });
 

@@ -14,6 +14,7 @@ export interface UserDataFromDB {
   id: number,
   username: string,
   email: string,
+  image?: string,
 }
 
 export interface ValidationErrorResponse {
@@ -74,6 +75,7 @@ export interface ResponseAfterSuccessfulAuth {
   id: number,
   username: string,
   token: string,
+  image?: string,
 }
 
 export interface ExpectedRequestBodyhttpPutUserById {

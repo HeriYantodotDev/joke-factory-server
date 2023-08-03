@@ -29,6 +29,7 @@ export class AuthHelperController {
         id: req.user.id,
         username: req.user.username,
         token,
+        image: req.user.image,
       };
   
       res.send(response);

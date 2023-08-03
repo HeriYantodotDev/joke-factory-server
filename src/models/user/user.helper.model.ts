@@ -95,7 +95,7 @@ export class UserHelperModel {
 
     const userList = await User.findAndCountAll({
       where: whereClause,
-      attributes: ['id', 'username', 'email'],
+      attributes: ['id', 'username', 'email', 'image'],
       limit: size,
       offset: page * size,
     });
@@ -151,7 +151,7 @@ export class UserHelperModel {
     return userList;
   }
 
-  public static async getActiveUserByid(idParams: number): Promise<User | null> {
+  public static async getActiveUserByID(idParams: number): Promise<User | null> {
     return await User.findOne({
       where: {
         id: idParams,
@@ -160,19 +160,24 @@ export class UserHelperModel {
     });
   }
 
-  public static async getActiveUserByIDReturnIdUserEmailOnly(idParams: number): Promise<UserDataFromDB | null> {
-    const user = await UserHelperModel.getActiveUserByid(idParams);
+  public static async getActiveUserByIDReturnIdUserEmailImageOnly(
+    idParams: number
+  ): Promise<UserDataFromDB | null> {
+    const user = await UserHelperModel.getActiveUserByID(idParams);
 
     if (!user) {
       return null;
     }
 
-    const { id, username, email } = user;
-    return { id, username, email };
+    const { id, username, email, image } = user;
+    return { id, username, email, image };
   }
 
-  public static async updateUserByID(idParams: number, body: ExpectedRequestBodyhttpPutUserById): Promise<void> {
-    const user = await this.getActiveUserByid(idParams);
+  public static async updateUserByID(
+    idParams: number, 
+    body: ExpectedRequestBodyhttpPutUserById
+  ): Promise<UserDataFromDB> {
+    const user = await this.getActiveUserByID(idParams);
 
     if (!user) {
       throw new ErrorUserNotFound();
@@ -185,10 +190,17 @@ export class UserHelperModel {
     user.username = body.username;
 
     await user.save();
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      image: user.image,
+    };
   }
 
   public static async deleteUserByID(idParams: number) {
-    const user = await this.getActiveUserByid(idParams);
+    const user = await this.getActiveUserByID(idParams);
 
     if (!user) {
       throw new ErrorUserNotFound();
