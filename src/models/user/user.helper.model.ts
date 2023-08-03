@@ -184,11 +184,11 @@ export class UserHelperModel {
       throw new ErrorUserNotFound();
     }
 
-    if (user.image) {
-      await FileUtils.deleteProfileImage(user.image);
-    }
-
     if (body.image) {
+      if (user.image) {
+        await FileUtils.deleteProfileImage(user.image);
+      }
+
       const fileName = await FileUtils.saveProfileImage(body.image);
       user.image = fileName;
     }

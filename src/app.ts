@@ -59,7 +59,7 @@ class startupMiddleware {
 
   private static configBodyParser(): void {
     app.use(express.urlencoded({ extended: false }));
-    app.use(express.json());
+    app.use(express.json({limit: '3mb'}));
     app.use(checkingJSONRequest());
   }
 

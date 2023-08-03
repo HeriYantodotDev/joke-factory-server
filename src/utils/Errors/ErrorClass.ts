@@ -62,3 +62,10 @@ export class ErrorEmailNotInuse extends Error {
   }
 }
 
+export class ErrorEntityTooLarge extends Error {
+  public code = 413;
+  constructor(message: string) {
+    super(message);
+  }
+}
+

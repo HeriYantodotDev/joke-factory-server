@@ -24,5 +24,6 @@
   "unauthorizedUserDelete": "Anda tidak diperbolehkan untuk menghapus akun pengguna",
   "emailNotInuse": "Email tidak ditemukan",
   "passwordResetRequestSuccess": "Silahkan cek email anda untuk melakukan pengaturan ulang password anda",
-  "unauthPasswordReset": "Anda tidak memilih otorisasi untuk melakakukan pengaturan ulang password. Silahkan ikuti prosedur pengaturan ulang password"
+  "unauthPasswordReset": "Anda tidak memilih otorisasi untuk melakakukan pengaturan ulang password. Silahkan ikuti prosedur pengaturan ulang password",
+  "profileImageSize": "Ukuran Gambar anda tidak boleh lebih dari 2MB"
 }
