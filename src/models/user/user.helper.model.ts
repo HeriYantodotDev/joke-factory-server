@@ -12,6 +12,7 @@ import { ErrorSendEmail } from '../../utils/Errors';
 import { ErrorUserNotFound } from '../../utils/Errors';
 import { Op, WhereOptions, InferAttributes } from 'sequelize';
 import { AuthHelperModel } from '../auth';
+import { FileUtils } from '../../utils/file/File.util';
 
 export class UserHelperModel {
   public static async createUser(newUser: NewUser): Promise<UserDataFromDB> {
@@ -184,7 +185,8 @@ export class UserHelperModel {
     }
 
     if (body.image) {
-      user.image = body.image;
+      const fileName = await FileUtils.saveProfileImage(body.image);
+      user.image = fileName;
     }
 
     user.username = body.username;

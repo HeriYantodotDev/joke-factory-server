@@ -1,4 +1,4 @@
-# User Update part 2
+# User Update part 
 
 ## User Profile Image
 
@@ -357,7 +357,136 @@ Great now let's call this function in our `app.ts` so it will run when we run th
 So, I'm adding a new static function and run in `this.runFileUtils();`
 
 
-## Storing Images in Folder
+## Storing Images locally
+
+Ok now let's create a test for it. So, instead of saving the image file in the database, we're going to save the file in the local folder: 
+
+```
+  test('saves the user image to upload folder and stores filename in user when update has image', async () => {
+    const fileInBase64 = readFileAsBase64();
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+      
+    const updatedUser = await UserHelperModel.getActiveUserByID(userList[0].id);
+
+    if (!updatedUser?.image) {
+      throw new Error('Please ensure there\'s an image file in this test');
+    }
+
+    const profileImagePath = path.join(profileDirectory, updatedUser.image );
+
+    expect(fs.existsSync(profileImagePath)).toBe(true);
+    
+  });
+```
+
+The test above checks whether we have a certain file exist in our local file. 
+
+And here's the implementation: 
+
+In the `updateUserByID`, we're calling a function in a `File.util` to save the profile image like this : 
+```
+  public static async updateUserByID(
+    idParams: number, 
+    body: ExpectedRequestBodyhttpPutUserById
+  ): Promise<UserDataFromDB> {
+    const user = await this.getActiveUserByID(idParams);
+
+    if (!user) {
+      throw new ErrorUserNotFound();
+    }
+
+    if (body.image) {
+      const fileName = await FileUtils.saveProfileImage(body.image);
+      user.image = fileName;
+    }
+
+    user.username = body.username;
+
+    await user.save();
+
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      image: user.image,
+    };
+  }
+```
+
+Now let's write the `saveProfileImage` function like this : 
+```
+  import dotenv from 'dotenv';
+  dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+  import fs from 'fs';
+  import path from 'path';
+
+  import { AuthHelperModel } from '../../models';
+
+  if (!process.env.uploadDir) {
+    throw new Error('Please set up the uploadDir environment');
+  }
+
+  const uploadDir = process.env.uploadDir;
+  const profileDir = 'profile';
+  const profileFolder = path.join('.', uploadDir, profileDir);
+
+
+  export class FileUtils {
+    public static createFolders() {
+
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir);
+      }
+
+      if (!fs.existsSync(profileFolder)) {
+        fs.mkdirSync(profileFolder);
+      }
+    }
+
+    public static async saveProfileImage(base64File: string) {
+
+      const fileName = AuthHelperModel.randomString(32);
+
+      const filePath = path.join(profileFolder, fileName);
+
+      await fs.promises.writeFile(filePath, base64File, 'base64');
+
+      return fileName;
+    }
+  }
+```
+
+Perfect, now we can save the file directly in the local directory. 
+
+
+## Serving Static Resources
+
+
+## Cleaning Up the Folders
+
+## Replacing Old Image
+
+## Username Validation
+
+## File Size Validation
+
+## File Type Validation
+
 
 
 
