@@ -113,7 +113,7 @@ export class UserHelperController {
 
     try {
       const id = Number(req.params.id);
-      const user = await UserHelperModel.getActiveUserByIDReturnIdUserEmailOnly(id);
+      const user = await UserHelperModel.getActiveUserByIDReturnIdUserEmailImageOnly(id);
       if (!user) {
         throw new ErrorUserNotFound();
       }
@@ -146,8 +146,8 @@ export class UserHelperController {
 
       const expectedRequestBody = requestBody as ExpectedRequestBodyhttpPutUserById;
 
-      await UserHelperModel.updateUserByID(id, expectedRequestBody );
-      res.send();
+      const userDataFromDB = await UserHelperModel.updateUserByID(id, expectedRequestBody );
+      res.send(userDataFromDB);
     }
 
     catch(err) {

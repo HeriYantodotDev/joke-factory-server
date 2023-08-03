@@ -96,14 +96,14 @@ describe('Listing users', () => {
     expect(response.body.content.length).toBe(6);
   });
 
-  test('returns only id, username, email [UserDataFromDB] type in the content array', async () => {
+  test('returns only id, username, email, and image [UserDataFromDB] type in the content array', async () => {
     await addMultipleNewUsers(10);
     const response = await getUser();
     const user = response.body.content;
-    expect(Object.keys(user[0])).toEqual(['id', 'username', 'email']);
+    expect(Object.keys(user[0])).toEqual(['id', 'username', 'email', 'image']);
   });
 
-  test('returns 2 as totalPages when there are 15 active and 7 inactiver users', async () => {
+  test('returns 2 as totalPages when there are 15 active and 7 inactive users', async () => {
     await addMultipleNewUsers(15,7);
     const response = await getUser();
     expect(response.body.totalPages).toBe(2);
@@ -201,10 +201,10 @@ describe('Get User', () => {
     expect(response.status).toBe(200);
   });
 
-  test('returns id, username, email in response an active user exist', async () => {
+  test('returns id, username, email, image in response an active user exist', async () => {
     const userList = await addMultipleNewUsers(1);
     const response = await getUserByID(userList[0].id);
-    expect(Object.keys(response.body)).toEqual(['id', 'username', 'email']);
+    expect(Object.keys(response.body)).toEqual(['id', 'username', 'email', 'image']);
   });
 
   test('returns 404 when the user is inactive', async () => {

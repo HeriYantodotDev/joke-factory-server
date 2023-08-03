@@ -141,7 +141,7 @@ describe('User Update', () => {
       }}
     );
 
-    const updatedUser = await UserHelperModel.getActiveUserByid(userList[0].id);
+    const updatedUser = await UserHelperModel.getActiveUserByID(userList[0].id);
     expect(updatedUser?.username).toBe(validUpdate.username);
   });
 
@@ -182,11 +182,34 @@ describe('User Update', () => {
         email : emailUser1, 
         password: passwordUser1,
       }}
-      );
+    );
       
-    const updatedUser = await UserHelperModel.getActiveUserByid(userList[0].id);
+    const updatedUser = await UserHelperModel.getActiveUserByID(userList[0].id);
 
     expect(updatedUser?.image).toBeTruthy();
+  });
+
+  test('returns success body having only id, username, email and image', async() => {
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+    const fileInBase64 = fs.readFileSync(filePath, {encoding: 'base64'});
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+    
+    expect(Object.keys(response.body)).toEqual(['id', 'username', 'email', 'image']);
   });
 
 });
