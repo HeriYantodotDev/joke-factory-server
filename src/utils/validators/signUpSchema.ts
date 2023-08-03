@@ -3,7 +3,6 @@ import { Locales } from '../Enum';
 //TODO: Add More validation error Message
 export const signUpSchema = Joi.object({
   username: Joi.string()
-    .alphanum()
     .min(3)
     .max(30)
     .required()

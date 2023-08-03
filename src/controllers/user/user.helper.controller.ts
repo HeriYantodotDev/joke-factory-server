@@ -132,13 +132,8 @@ export class UserHelperController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const authenticatedUser = req.authenticatedUser;
       const requestBody: unknown = req.body;
       const id = Number(req.params.id);
-
-      if ( !authenticatedUser || authenticatedUser.id !== id) {
-        throw new ErrorAuthForbidden(Locales.unauthorizedUserUpdate);
-      }
 
       if (typeof requestBody !== 'object' || requestBody === null) {
         throw new Error('Something wrong with the req.body, please check the middleware');

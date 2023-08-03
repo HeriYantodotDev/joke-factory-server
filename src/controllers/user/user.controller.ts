@@ -8,7 +8,8 @@ import { bodyValidatorMW,
   paginationMW,
   userUpdateSchema,
   passwordResetSchema,
-  passwordUpdateSchema
+  passwordUpdateSchema,
+  checkAuthMW
 } from '../../utils';
 
 
@@ -34,6 +35,7 @@ class UsersController {
 
   @put('/:id', UserHelperController.httpPutUserById )
   @use(bodyValidatorMW(userUpdateSchema, validationErrorGenerator, validationOption))
+  @use(checkAuthMW)
   userPutById(): void {}
 
   @del('/:id', UserHelperController.httpDeleteUserById)
