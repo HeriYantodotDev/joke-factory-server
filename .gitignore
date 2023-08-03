@@ -5,3 +5,5 @@ build/
 coverage/
 test.sqlite
 database.sqlite
+uploads-dev/
+uploads-test/
