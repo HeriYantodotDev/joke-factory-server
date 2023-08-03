@@ -231,6 +231,133 @@ public static async httpPutUserById(
 }
 ```
 
+However, for somehow, when I uploaded JPG file format, the application is broken and the request body is empty {}. Now sure why. 
+
+The reason I believe from the front end. 
 
 ## Upload Folder
+
+Instead of saving file in a database, let's store it in a local folder. Now let's create: 
+- A new test file named: `FileService.test.ts`
+- A new util file under `utils` folder, we create a new folder named `File.util.ts`
+
+Now let's create our first test: 
+```
+import fs from 'fs';
+import { FileUtils } from '../utils/file/File.util';
+
+
+describe('createFolders' , () => {
+  test('creates upload folder', () => {
+    FileUtils.createFolders();
+    const folderName = 'upload';
+    expect(fs.existsSync(folderName)).toBe(true);
+
+  });
+});
+```
+
+The implementation is pretty straightforward, so we're using `fs` module to create a folder: 
+
+```
+import fs from 'fs';
+
+export class FileUtils {
+  public static createFolders() {
+    const  uploadDir = 'upload';
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync('upload');
+    }
+  }
+}
+```
+
+Then the test will pass.
+
+Now let's create a folder based on the environment. First we have to set the environment variable : `uploadDir`:
+```
+// in .env.development 
+
+uploadDir=uploads-test
+
+// in .env.test
+
+uploadDir=uploads-dev
+
+```
+
+Now let's update the test: 
+
+```
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+import fs from 'fs';
+import path from 'path';
+import { FileUtils } from '../utils/file/File.util';
+
+const uploadDir = process.env.uploadDir;
+
+const profileDir = 'profile';
+
+
+if (!uploadDir) {
+  throw new Error('Please set up the uploadDir environment');
+}
+
+describe('createFolders' , () => {
+  test('creates upload folder', () => {
+    FileUtils.createFolders();
+    const folderName = uploadDir;
+    expect(fs.existsSync(folderName)).toBe(true);
+
+  });
+
+  test('creates profile folder under upload folder', () => {
+    FileUtils.createFolders();
+    const profileFolder = path.join('.', uploadDir, profileDir);
+    expect(fs.existsSync(profileFolder)).toBe(true);
+  });
+});
+```
+
+And here's the implementation: 
+
+```
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+import fs from 'fs';
+import path from 'path';
+
+const profileDir = 'profile';
+
+export class FileUtils {
+  public static createFolders() {
+
+    const uploadDir = process.env.uploadDir;
+
+    if (!uploadDir) {
+      throw new Error('Please set up the uploadDir environment');
+    }
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+
+    const profileFolder = path.join('.', uploadDir, profileDir);
+
+    if (!fs.existsSync(profileFolder)) {
+      fs.mkdirSync(profileFolder);
+    }
+  }
+}
+```
+
+Great now let's call this function in our `app.ts` so it will run when we run the server. 
+So, I'm adding a new static function and run in `this.runFileUtils();`
+
+
+## Storing Images in Folder
+
+
 

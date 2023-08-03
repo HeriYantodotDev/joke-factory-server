@@ -27,6 +27,8 @@ import { tokenAuthenticationMW } from './utils';
 
 import cors from 'cors';
 
+import { FileUtils } from './utils/file/File.util';
+
 export const app = express();
 
 const LOCAL_OPTIONS = {
@@ -44,6 +46,7 @@ class startupMiddleware {
     this.enableSession();
     this.enableFlash();
     this.enablePassport();
+    this.runFileUtils();
   }
 
   private static configBodyParser(): void {
@@ -160,6 +163,10 @@ class startupMiddleware {
         origin: 'http://localhost:5173',
       })
     );
+  }
+
+  private static runFileUtils() {
+    FileUtils.createFolders();
   }
 
 
