@@ -600,6 +600,7 @@ Now in the package.json we're adding the script like this :
 ```
 
 If we stop the test, then the script `posttest` will run automatically and clean up all of our folder 
+
 ## Replacing Old Image
 If a user uploads a new picture, we should remove the old one, and replace it with a new one. 
 So, let's add a new test for user update. 
@@ -687,10 +688,148 @@ And here's the sub function in the `FileUtil`:
   }
 ```
 
-
 ## Username Validation
 
+Let's creating a test with translation for the username:
+
+```
+  test.each`
+  lang             | value                     | message
+  ${'en'}          | ${''}                     | ${en.errorUsernameEmpty}
+  ${'en'}          | ${null}                   | ${en.errorUsernameNull}
+  ${'en'}          | ${'as'}                   | ${en.userSizeMin}
+  ${'en'}          | ${longUserName}           | ${en.userSizeMax}
+  ${'id'}          | ${''}                     | ${id.errorUsernameEmpty}
+  ${'id'}          | ${null}                   | ${id.errorUsernameNull}
+  ${'id'}          | ${'as'}                   | ${id.userSizeMin}
+  ${'id'}          | ${longUserName}           | ${id.userSizeMax}
+  `('returns bad request with $message when username is updated with "$value" and the language is "$lang"', 
+  async({lang, value, message}) => {
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+      
+    const inValidUpdate = { 
+      username: value,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      inValidUpdate, 
+      { 
+        auth : { 
+          email : emailUser1, 
+          password: passwordUser1,
+        },
+        language: lang,
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.body.validationErrors.username).toBe(message);
+  });
+```
+
+I already put the body validation in this route, however, I checked the authorization after the body validation. Since it doesn't make make sense, then I have to check the authorization first before check the body validation. 
+
+```
+  @put('/:id', UserHelperController.httpPutUserById )
+  @use(bodyValidatorMW(userUpdateSchema, validationErrorGenerator, validationOption))
+  @use(checkAuthMW)
+  userPutById(): void {}
+```
+
+Then in the `checkAuthMW`: 
+
+```
+import { RequestWithAuthenticatedUser} from '../../models';
+import { Response, NextFunction } from 'express';
+import { ErrorHandle, ErrorAuthForbidden } from '../Errors';
+import { Locales } from '../Enum';
+
+export async function checkAuthMW(
+  req: RequestWithAuthenticatedUser,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+
+  const authenticatedUser = req.authenticatedUser;
+  const id = Number(req.params.id);
+
+  if ( !authenticatedUser || authenticatedUser.id !== id ) {
+    ErrorHandle(new ErrorAuthForbidden(Locales.unauthorizedUserUpdate), req, res, next);
+    return;
+  }
+
+  next();
+}
+
+```
+
+Great now it's time to remove unnecessary line of codes in the controller helper : 
+
+```
+  public static async httpPutUserById(
+    req: RequestWithAuthenticatedUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const requestBody: unknown = req.body;
+      const id = Number(req.params.id);
+
+      if (typeof requestBody !== 'object' || requestBody === null) {
+        throw new Error('Something wrong with the req.body, please check the middleware');
+      }
+
+      const expectedRequestBody = requestBody as ExpectedRequestBodyhttpPutUserById;
+
+      const userDataFromDB = await UserHelperModel.updateUserByID(id, expectedRequestBody );
+      res.send(userDataFromDB);
+    }
+
+    catch(err) {
+      next(err);
+    }
+  }
+```
+
+Now let's update the schema for user update: 
+
+```
+import Joi from 'joi';
+import { Locales } from '../Enum';
+
+export const userUpdateSchema = Joi.object({
+  username: Joi.string()
+    .required()
+    .min(3)
+    .max(30)
+    .messages({
+      'any.required': Locales.errorUsernameEmpty,
+      'string.empty': Locales.errorUsernameEmpty,
+      'string.base': Locales.errorUsernameNull,
+      'string.min' : Locales.userSizeMin,
+      'string.max' : Locales.userSizeMax,
+    }),
+  image: Joi.any().optional(),
+}).options({
+    allowUnknown: false,
+}).messages({
+  'object.unknown': Locales.customFieldNotAllowed,
+});
+
+```
+
+And then I don't need to put `alphanum` in the validation since sometimes the username has `-` in it. 
+
+Great. The last thing is also to update the signup scheme. The update is to remove the `aphanum` validation. 
+
+Let's move to the next section then. 
+
+
 ## File Size Validation
+
+
+
 
 ## File Type Validation
 

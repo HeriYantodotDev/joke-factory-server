@@ -75,6 +75,8 @@ function readFileAsBase64() {
   return fileInBase64;
 }
 
+const longUserName = 'akaksjdyrhakaksjdyrhakaksjdyrha';
+
 describe('User Update', () => {
   test('returns forbideen when request sent without basic auth', async() => {
     const response = await putUser();
@@ -85,7 +87,7 @@ describe('User Update', () => {
   language    | message
   ${'en'}     | ${en.unauthorizedUserUpdate}
   ${'id'}     | ${id.unauthorizedUserUpdate}
-  `('return error body with "$message" for unauthrized request when language is "$language"', 
+  `('return error body with "$message" for unauthorized request when language is "$language"', 
   async({language, message}) => {
     const nowInMilis = new Date().getTime();
     const response = await putUser(5, undefined, {language});
@@ -295,6 +297,37 @@ describe('User Update', () => {
     
   });
 
+  test.each`
+  lang             | value                     | message
+  ${'en'}          | ${''}                     | ${en.errorUsernameEmpty}
+  ${'en'}          | ${null}                   | ${en.errorUsernameNull}
+  ${'en'}          | ${'as'}                   | ${en.userSizeMin}
+  ${'en'}          | ${longUserName}           | ${en.userSizeMax}
+  ${'id'}          | ${''}                     | ${id.errorUsernameEmpty}
+  ${'id'}          | ${null}                   | ${id.errorUsernameNull}
+  ${'id'}          | ${'as'}                   | ${id.userSizeMin}
+  ${'id'}          | ${longUserName}           | ${id.userSizeMax}
+  `('returns bad request with $message when username is updated with "$value" and the language is "$lang"', 
+  async({lang, value, message}) => {
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+      
+    const inValidUpdate = { 
+      username: value,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      inValidUpdate, 
+      { 
+        auth : { 
+          email : emailUser1, 
+          password: passwordUser1,
+        },
+        language: lang,
+      }
+    );
 
-  
+    expect(response.status).toBe(400);
+    expect(response.body.validationErrors.username).toBe(message);
+  });
 });
