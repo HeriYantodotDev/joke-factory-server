@@ -15,7 +15,6 @@ const profileFolder = path.join('.', uploadDir, profileDir);
 
 export class FileUtils {
   public static createFolders() {
-
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir);
     }
@@ -26,7 +25,6 @@ export class FileUtils {
   }
 
   public static async saveProfileImage(base64File: string) {
-
     const fileName = AuthHelperModel.randomString(32);
 
     const filePath = path.join(profileFolder, fileName);
@@ -34,6 +32,11 @@ export class FileUtils {
     await fs.promises.writeFile(filePath, base64File, 'base64');
 
     return fileName;
+  }
+
+  public static async deleteProfileImage(fileName: string) {
+    const filePath = path.join(profileFolder, fileName);
+    await fs.promises.unlink(filePath);
   }
 
 }
