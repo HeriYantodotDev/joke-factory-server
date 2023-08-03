@@ -13,7 +13,6 @@ const uploadDir = process.env.uploadDir;
 const profileDir = 'profile';
 const profileFolder = path.join('.', uploadDir, profileDir);
 
-
 export class FileUtils {
   public static createFolders() {
 
