@@ -476,6 +476,92 @@ Perfect, now we can save the file directly in the local directory.
 
 ## Serving Static Resources
 
+This time we will create a feature for our app to server static files. 
+
+Let's create the test first: 
+
+```
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+import fs from 'fs';
+import path from 'path';
+import request from 'supertest';
+import { app } from '../app';
+
+const uploadDir = process.env.uploadDir;
+
+const profileDir = 'profile';
+
+if (!uploadDir) {
+  throw new Error('Please set up the uploadDir environment');
+}
+
+const profileDirectory = path.join('.', uploadDir, profileDir);
+
+describe('Profile Images', () => {
+  test('returns 404 when file not found', async() => {
+    const response = await request(app).get('/images/123456');
+    expect(response.status).toBe(404);
+  });
+
+  test('returns 200 when file exists', async() => {
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+    const storedFileName = 'test-file';
+    const targetPath = path.join(profileDirectory, storedFileName);
+    fs.copyFileSync(filePath, targetPath);
+    const response = await request(app).get(`/images/${storedFileName}`);
+    expect(response.status).toBe(200);
+  });
+});
+```
+
+Ok! The test above is our initial test. As you can see that we're requesting a get request with the url is `images`. 
+
+For the implementation is very simple. First we create a new function under `startupMiddleware` in the `app.ts`:
+
+```
+private static configStaticFiles(): void {
+  if (!process.env.uploadDir) {
+    throw new Error('Please set up the uploadDir environment');
+  }
+  
+  const uploadDir = process.env.uploadDir;
+  const profileDir = 'profile';
+  const profileFolder = path.join('.', uploadDir, profileDir);
+
+  app.use('/images', express.static(profileFolder));
+  }
+```
+
+As you can see, that we're configuring our app to server the static file if the path of the get request is `/images`. 
+
+Then we can call this function within `configMiddleware` function. 
+
+If we run our server, we can access the image through this link like this : 
+`http://localhost:3000/images/test.png`
+
+Now let's add more functionality. Let's use client's side caching. Ever time the browser refresh it'll ask backend whether there's a change or not, if not then it continues to use the same file it cached. 
+
+Let's set our test:
+```
+test('returns cached for 1 year in response', async() => {
+  const response = await copyFileAndSendRequest();
+  const oneYearInSeconds = 365 * 24 * 60 * 60;
+  expect(response.header['cache-control']).toContain(`max-age=${oneYearInSeconds}`);
+});
+```
+
+Now in the implementation we only need to add some option: 
+
+```
+const ONE_YEAR_IN_MS = 365 * 24 * 60 * 60 * 1000;
+app.use('/images', express.static(profileFolder, {maxAge: ONE_YEAR_IN_MS}));
+```
+
+The test then will pass. If we check in the browser it shows like this: 
+![caching](caching.png)
+
+It shows `304` not modified response if we tried to refresh the browser. The file size is smaller than before. 
 
 ## Cleaning Up the Folders
 

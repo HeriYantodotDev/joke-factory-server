@@ -1,5 +1,8 @@
 import express from 'express';
 
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+
 import { AppRouter } from './AppRouter';
 
 import './controllers/index';
@@ -27,6 +30,8 @@ import { tokenAuthenticationMW } from './utils';
 
 import cors from 'cors';
 
+import path from 'path';
+
 import { FileUtils } from './utils/file/File.util';
 
 export const app = express();
@@ -36,9 +41,12 @@ const LOCAL_OPTIONS = {
   passwordField: 'password',
 };
 
+const ONE_YEAR_IN_MS = 365 * 24 * 60 * 60 * 1000;
+
 class startupMiddleware {
   static configMiddleware(): void {
     this.configBodyParser();
+    this.configStaticFiles();
     this.configTokenMW();
     this.configi18Next();
     this.configPassport();
@@ -53,6 +61,18 @@ class startupMiddleware {
     app.use(express.urlencoded({ extended: false }));
     app.use(express.json());
     app.use(checkingJSONRequest());
+  }
+
+  private static configStaticFiles(): void {
+    if (!process.env.uploadDir) {
+      throw new Error('Please set up the uploadDir environment');
+    }
+    
+    const uploadDir = process.env.uploadDir;
+    const profileDir = 'profile';
+    const profileFolder = path.join('.', uploadDir, profileDir);
+
+    app.use('/images', express.static(profileFolder, {maxAge: ONE_YEAR_IN_MS}));
   }
 
   private static configTokenMW(): void {
