@@ -14,6 +14,7 @@ const config: Config.InitialOptions = {
     'jest-watch-typeahead/filename',
     'jest-watch-typeahead/testname',
   ],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
 };
 
 export default config;
