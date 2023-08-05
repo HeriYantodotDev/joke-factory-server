@@ -1,4 +1,4 @@
-# User Update part 
+# User Update part 2
 
 ## User Profile Image
 
@@ -1129,6 +1129,182 @@ And then create how to handle it without translation in the `ErrorHandle` :
 
 ## File Type Validation
 
+We will ensuring that the user won't be able to send file other than `jpg` and `png`. 
 
+Here are the tests: 
 
+```
+  test.each`
+  file                | status
+  ${'test-gif.gif'}   | ${400}
+  ${'test-pdf.pdf'}   | ${400}
+  ${'test-txt.txt'}   | ${400}
+  ${'test-png.png'}   | ${200}
+  ${'test-jpg.jpg'}   | ${200}
+  `('returns $status when uploading $file as image', async({file, status}) => {
+    const fileInBase64 = readFileAsBase64(file);
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const updateBody = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      updateBody, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    expect(response.status).toBe(status);
+  });
+
+  test.each`
+  file                | lang      | message
+  ${'test-gif.gif'}   | ${'en'}   | ${en.unsupportedImageFile}
+  ${'test-gif.gif'}   | ${'id'}   | ${id.unsupportedImageFile}
+  ${'test-pdf.pdf'}   | ${'en'}   | ${en.unsupportedImageFile}
+  ${'test-pdf.pdf'}   | ${'id'}   | ${id.unsupportedImageFile}
+  ${'test-txt.txt'}   | ${'en'}   | ${en.unsupportedImageFile}
+  ${'test-txt.txt'}   | ${'id'}   | ${id.unsupportedImageFile}
+  `('returns "$message" if the file is $file and language is $language', async({file, lang, message}) => {
+    const fileInBase64 = readFileAsBase64(file);
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const updateBody = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      updateBody, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      },
+      language: lang,
+      }
+    );
+
+    expect(response.body.validationErrors.image).toBe(message);
+  });
+
+```
+
+To do the validation, we're going to use a library named [`file-type`](https://www.npmjs.com/package/file-type). It supports TypeScript out of the box and has many users. It's over 20 mio weekly download. 
+
+Now let' install it : 
+```
+npm i file-type
+```
+
+However!!!!
+It turned out the `file-type` has conflict when I run jest. Therefore I prefer to do it manually for the implementation. So I'm checking the first string of the encoded file whether to contain certain character to determine the file types. Let's create a `whiteListingImageHeaders`: 
+
+```
+  const whiteListingImageHeaders = {
+    'image/jpeg' : '/9j/',
+    'image/png': 'iVBORw0K',
+  };
+```
+
+Then let's create a function to validate it in our Joi Schema: 
+
+```
+function validateImageType(value: string, helpers: CustomHelpers) {
+  const whiteListingImageHeaders = {
+    'image/jpeg' : '/9j/',
+    'image/png': 'iVBORw0K',
+  };
+
+  if (!value) {
+    return value;
+  }
+
+  const header = value.substring(0,30);
+
+  const isValidType = Object.values(whiteListingImageHeaders).some(pattern => header.startsWith(pattern));
+
+  if(isValidType) {
+    return value;
+  }
+
+  return helpers.error('imageType.invalid');
+}
+
+```
+
+And also create the message for the error (Translation and Enum). Here's the full `userUpdateSchema.ts`
+```
+import Joi,  { CustomHelpers } from 'joi';
+import { Locales } from '../Enum';
+
+function validateImageSize(value: string, helpers: CustomHelpers) {
+  if (!value) {
+    return value;
+  }
+
+  const buffer = Buffer.from(value, 'base64');
+
+  if (buffer.length > 2 * 1024 * 1024) {
+    return helpers.error('imageSize.max');
+  } 
+  return value;
+}
+
+function validateImageType(value: string, helpers: CustomHelpers) {
+  const whiteListingImageHeaders = {
+    'image/jpeg' : '/9j/',
+    'image/png': 'iVBORw0K',
+  };
+
+  if (!value) {
+    return value;
+  }
+
+  const header = value.substring(0,30);
+
+  const isValidType = Object.values(whiteListingImageHeaders).some(pattern => header.startsWith(pattern));
+
+  if(isValidType) {
+    return value;
+  }
+
+  return helpers.error('imageType.invalid');
+}
+
+export const userUpdateSchema = Joi.object({
+  username: Joi.string()
+    .required()
+    .min(3)
+    .max(30)
+    .messages({
+      'any.required': Locales.errorUsernameEmpty,
+      'string.empty': Locales.errorUsernameEmpty,
+      'string.base': Locales.errorUsernameNull,
+      'string.min' : Locales.userSizeMin,
+      'string.max' : Locales.userSizeMax,
+    }),
+  image: Joi.any()
+    .optional()
+    .custom(validateImageSize)
+    .custom(validateImageType)
+    .messages({
+      'imageSize.max': Locales.profileImageSize, 
+      'imageType.invalid': Locales.unsupportedImageFile, 
+    }),
+}).options({
+    allowUnknown: false,
+}).messages({
+  'object.unknown': Locales.customFieldNotAllowed,
+});
+```
+
+It's done. 
 

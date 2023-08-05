@@ -69,8 +69,8 @@ async function putUser(
   return await agent2.send(body);
 }
 
-function readFileAsBase64() {
-  const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+function readFileAsBase64(file = 'test-png.png' ) {
+  const filePath = path.join('.', 'src', '__tests__', 'resources', file);
   const fileInBase64 = fs.readFileSync(filePath, {encoding: 'base64'});
   return fileInBase64;
 }
@@ -332,14 +332,15 @@ describe('User Update', () => {
   });
 
   test('returns 200 when image size is exactly 2mb', async () => {
-    const fileWithSize2MB = 'a'.repeat(1024 * 1024 * 2);
-    const base64 = Buffer.from(fileWithSize2MB).toString('base64');
+    const fileWithSize2MB = 'iVBORw0K' + ('a'.repeat( (1024 * 1024 * 2) - 8));
+
+    // const base64 = Buffer.from(fileWithSize2MB).toString('base64');
 
     const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
 
     const validUpdate = { 
       username: 'user1-updated',
-      image: base64,
+      image: fileWithSize2MB,
     };
 
     const response = await putUser(
@@ -352,7 +353,7 @@ describe('User Update', () => {
         },
       }
     );
-
+    
     expect(response.status).toBe(200);
     
   });
@@ -457,5 +458,67 @@ describe('User Update', () => {
 
     expect(response.body.validationErrors.image).toBe(message);
   });
+
+  test.each`
+  file                | status
+  ${'test-gif.gif'}   | ${400}
+  ${'test-pdf.pdf'}   | ${400}
+  ${'test-txt.txt'}   | ${400}
+  ${'test-png.png'}   | ${200}
+  ${'test-jpg.jpg'}   | ${200}
+  `('returns $status when uploading $file as image', async({file, status}) => {
+    const fileInBase64 = readFileAsBase64(file);
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const updateBody = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      updateBody, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    expect(response.status).toBe(status);
+  });
+
+  test.each`
+  file                | lang      | message
+  ${'test-gif.gif'}   | ${'en'}   | ${en.unsupportedImageFile}
+  ${'test-gif.gif'}   | ${'id'}   | ${id.unsupportedImageFile}
+  ${'test-pdf.pdf'}   | ${'en'}   | ${en.unsupportedImageFile}
+  ${'test-pdf.pdf'}   | ${'id'}   | ${id.unsupportedImageFile}
+  ${'test-txt.txt'}   | ${'en'}   | ${en.unsupportedImageFile}
+  ${'test-txt.txt'}   | ${'id'}   | ${id.unsupportedImageFile}
+  `('returns "$message" if the file is $file and language is $language', async({file, lang, message}) => {
+    const fileInBase64 = readFileAsBase64(file);
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const updateBody = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      updateBody, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      },
+      language: lang,
+      }
+    );
+
+    expect(response.body.validationErrors.image).toBe(message);
+  });
+
 
 });

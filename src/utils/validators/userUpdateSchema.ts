@@ -1,8 +1,7 @@
 import Joi,  { CustomHelpers } from 'joi';
 import { Locales } from '../Enum';
 
-function validateImage(value: string, helpers: CustomHelpers) {
-
+function validateImageSize(value: string, helpers: CustomHelpers) {
   if (!value) {
     return value;
   }
@@ -10,9 +9,30 @@ function validateImage(value: string, helpers: CustomHelpers) {
   const buffer = Buffer.from(value, 'base64');
 
   if (buffer.length > 2 * 1024 * 1024) {
-    return helpers.error('any.invalid');
+    return helpers.error('imageSize.max');
   } 
   return value;
+}
+
+function validateImageType(value: string, helpers: CustomHelpers) {
+  const whiteListingImageHeaders = {
+    'image/jpeg' : '/9j/',
+    'image/png': 'iVBORw0K',
+  };
+
+  if (!value) {
+    return value;
+  }
+
+  const header = value.substring(0,30);
+
+  const isValidType = Object.values(whiteListingImageHeaders).some(pattern => header.startsWith(pattern));
+
+  if(isValidType) {
+    return value;
+  }
+
+  return helpers.error('imageType.invalid');
 }
 
 export const userUpdateSchema = Joi.object({
@@ -29,9 +49,11 @@ export const userUpdateSchema = Joi.object({
     }),
   image: Joi.any()
     .optional()
-    .custom(validateImage)
+    .custom(validateImageSize)
+    .custom(validateImageType)
     .messages({
-      'any.invalid': Locales.profileImageSize, 
+      'imageSize.max': Locales.profileImageSize, 
+      'imageType.invalid': Locales.unsupportedImageFile, 
     }),
 }).options({
     allowUnknown: false,

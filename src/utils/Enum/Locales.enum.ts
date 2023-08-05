@@ -23,5 +23,6 @@ export enum Locales {
   emailNotInuse = 'emailNotInuse',
   passwordResetRequestSuccess = 'passwordResetRequestSuccess',
   unauthPasswordReset = 'unauthPasswordReset',
-  profileImageSize = 'profileImageSize'
+  profileImageSize = 'profileImageSize',
+  unsupportedImageFile = 'unsupportedImageFile'
 }
