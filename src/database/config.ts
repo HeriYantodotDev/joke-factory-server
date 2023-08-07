@@ -4,12 +4,22 @@ dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 
 const dialect = process.env.dialect;
 
-if (process.env.NODE_ENV !== 'production') {
+if (environment === 'test' || environment === 'development') {
   const storage = process.env.storage;
   module.exports = {
     [environment as string]: {
       dialect: dialect,
       storage: storage,
+    },
+  };
+}
+
+if (environment === 'staging') {
+  const url = process.env.databaseURL;
+  module.exports = {
+    [environment as string]: {
+      dialect: dialect,
+      url: url,
     },
   };
 }

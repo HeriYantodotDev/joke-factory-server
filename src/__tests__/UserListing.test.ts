@@ -69,8 +69,8 @@ beforeAll( async () => {
 });
 
 beforeEach( async () => {
-  await User.destroy({truncate: true});
-  await Auth.destroy({truncate: true});
+  await User.destroy({where: {}});
+  await Auth.destroy({where: {}});
 });
 
 afterAll(async () => {

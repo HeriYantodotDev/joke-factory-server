@@ -133,7 +133,7 @@ beforeAll( async () => {
 beforeEach( async () => {
   simulateSmtpFailure = false;
   jest.restoreAllMocks();
-  await User.destroy({truncate: true});
+  await User.destroy({where: {}});
 });
 
 afterAll(async () => {
