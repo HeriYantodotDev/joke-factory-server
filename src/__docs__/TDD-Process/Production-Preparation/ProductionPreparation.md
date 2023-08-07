@@ -579,8 +579,45 @@ So for staging, when there's no database, the migration file will create it.
 REMEMBER: If we'd like to change the schema, we have to create a new migration file with the newest timeStamp. If not nothing will change. 
 Or we can drop the table first. 
 
+## Refactor the configuration
+
+We have two separated configuration, one in the environment variable, and one in the `database-config`. We can change the configuration into JS file, and make it is easier. 
+
+First of let's change the previous configuration file : `sequelize-config.json` into `config.ts`. The new config file will be under `database` folder:
+
+```
+import dotenv from 'dotenv';
+const environment = process.env.NODE_ENV as string;
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+
+const dialect = process.env.dialect;
+
+if (process.env.NODE_ENV !== 'production') {
+  const storage = process.env.storage;
+  module.exports = {
+    [environment as string]: {
+      dialect: dialect,
+      storage: storage,
+    },
+  };
+}
+```
+
+Great now let's change the `.sequelizerc` :
+
+```
+const path = require('path');
+
+module.exports = {
+  'config': path.resolve('dist', 'database', 'config.js' ),
+  'models-path': path.resolve('dist', 'database', 'models'),
+  'seeders-path': path.resolve('dist', 'database', 'seeders'),
+  'migrations-path': path.resolve('dist', 'database', 'migrations')
+}
+```
+
+As you can see, I changed the implementation a little bit since we don't need user name, etc for sqlite. We only need the storage location. The best way to do this is to use `url`. However, I have no idea why this runs into a problem, therefore, the current workaround is to separate the implementation. 
 
 
-##
 
 ##
