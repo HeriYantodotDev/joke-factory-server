@@ -620,4 +620,31 @@ As you can see, I changed the implementation a little bit since we don't need us
 
 
 
-##
+## Setting Up Postgres
+
+Of course we have to install postgres on our WSL + PGAdmin on Windows. 
+
+Now let's change our configuration:
+- Install the `pg` package first: `https://www.npmjs.com/package/pg`. This is to ensure that `sequelize-cli` works. However not really sure about this: and also `pg-hstore`. 
+- Then we have to change the environment variable like this : 
+  ```
+  databaseURL=postgres://postgres:postgres@127.0.0.1:5432/joke-factory
+  dialect=postgres
+  logging=false
+  transporter_config={"host": "localhost","port": 8585,"tls": {"rejectUnauthorized": false}}
+  jwtkey=this-is-our-secret
+  uploadDir=uploads-staging
+  ```
+- Then our previous test setting is not working for destroying the table. Instead we have to replace all our setting to be like this : 
+  ```
+  beforeEach( async () => {
+    await User.destroy({where: {}});
+    await Auth.destroy({where: {}});
+  });
+  ```
+
+  This will work both in the sqlite and also postgres.
+
+## 
+
+## 

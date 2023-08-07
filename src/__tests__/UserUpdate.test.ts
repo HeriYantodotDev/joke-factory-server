@@ -33,8 +33,8 @@ beforeAll( async () => {
 });
 
 beforeEach( async () => {
-  await User.destroy({truncate: true});
-  await Auth.destroy({truncate: true});
+  await User.destroy({where: {}});
+  await Auth.destroy({where: {}});
 });
 
 afterAll(async () => {
@@ -80,7 +80,7 @@ function readFileAsBase64(file = 'test-png.png' ) {
 const longUserName = 'akaksjdyrhakaksjdyrhakaksjdyrha';
 
 describe('User Update', () => {
-  test('returns forbideen when request sent without basic auth', async() => {
+  test('returns forbidden when request sent without basic auth', async() => {
     const response = await putUser();
     expect(response.status).toBe(403);
   });
