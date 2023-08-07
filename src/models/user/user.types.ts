@@ -1,6 +1,19 @@
 import { Request } from 'express';
 import { User } from './User.model';
 
+export interface UserTypesArray {
+  id?: number,
+  username: string,
+  email: string,
+  password: string,
+  inactive?: boolean,
+  activationToken?: string,
+  passwordResetToken?: string,
+  image?: string,
+  createdAt?: Date,
+  updatedAt?: Date,
+}
+
 export interface NewUser {
   [key: string]: string | boolean | undefined,
   username: string,

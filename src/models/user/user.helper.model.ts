@@ -3,7 +3,8 @@ import { NewUser,
   UserDataFromDB, 
   UserPagination,
   UserWithIDOnly,
-  ExpectedRequestBodyhttpPutUserById
+  ExpectedRequestBodyhttpPutUserById,
+  UserTypesArray
 } from './user.types';
 import bcrypt from 'bcrypt';
 import {sendAccountActivation} from '../../email/EmailService'; 
@@ -145,12 +146,30 @@ export class UserHelperModel {
         email: `user${i+1}@gmail.com`,
         password,
         inactive: i >= activeUserAccount,
-    };
+      };
       const user =  await User.create(newUser);
       userList.push(user);
     }
     return userList;
   }
+
+  public static async addMultipleNewUsersArray(activeUserAccount: number, inactiveUserAccount = 0): Promise<UserTypesArray[]> {
+    const userList: UserTypesArray[] = [];
+    const password = await UserHelperModel.hashPassword('A4GuaN@SmZ');
+    for (let i=0; i < (activeUserAccount+inactiveUserAccount); i++) {
+      const newUser: UserTypesArray = {
+        username: `user${i+1}`,
+        email: `user${i+1}@gmail.com`,
+        password,
+        inactive: i >= activeUserAccount,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      userList.push(newUser);
+    }
+    return userList;
+  }
+
 
   public static async getActiveUserByID(idParams: number): Promise<User | null> {
     return await User.findOne({

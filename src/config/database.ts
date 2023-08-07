@@ -4,6 +4,7 @@ dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import { Sequelize } from 'sequelize';
 
 const databaseURL = process.env.databaseURL;
+
 const logging = process.env.logging;
 
 const loggingBoolean = logging === 'true';

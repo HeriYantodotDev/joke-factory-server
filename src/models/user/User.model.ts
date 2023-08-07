@@ -62,7 +62,3 @@ User.hasMany(Auth, {
   onDelete: 'cascade',
   foreignKey: 'userID',
 });
-
-// (sequelize) Warning: SQLite does not support 'INTEGER' 
-// with UNSIGNED 
-// or ZEROFILL. Plain 'INTEGER' will be used instead.
