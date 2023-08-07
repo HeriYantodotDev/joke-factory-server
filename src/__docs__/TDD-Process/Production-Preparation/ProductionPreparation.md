@@ -518,9 +518,66 @@ Great that's it. Everything works for the creation of the database table, and al
 
 So far, we run our test against a database in the memory. However in production we're not running it against a database in memory. Therefore we have to create a similar environment. It's called staging. 
 
+Now let's move to the `package.json`. Let's add several script here : 
 
+```
+"test:staging": "NODE_ENV=staging jest --runInBand --watchAll",
+"migrate:test": "NODE_ENV=staging sequelize-cli db:migrate",
+"pretest:staging": "npm run prestart && npm run migrate:test",
+"posttest:staging": "NODE_ENV=staging ts-node src/test-cleanup.ts",
+```
 
-Now let's move to the `package.json`: 
+In the script above we're creating a new script to run the test in the `staging` environment. 
+
+Therefore we need to create a new file for environment : `env.staging` and tweak it a little bit like this : 
+
+```
+databaseURL=sqlite:staging.sqlite
+logging=false
+transporter_config={"host": "localhost","port": 8585,"tls": {"rejectUnauthorized": false}}
+jwtkey=this-is-our-secret
+uploadDir=uploads-staging
+```
+
+Next let's change the config for migration : 
+```
+{
+  "development": {
+    "username": "root",
+    "password": null,
+    "database": "joke_factory_development",
+    "host": "localhost",
+    "dialect": "sqlite",
+    "storage": "./database.sqlite",
+    "databaseURL": "sqlite:database.sqlite"
+  },
+  "staging": {
+    "username": "root",
+    "password": null,
+    "database": "joke_factory_development",
+    "host": "localhost",
+    "dialect": "sqlite",
+    "storage": "./staging.sqlite",
+    "databaseURL": "sqlite:database.sqlite"
+  }
+}
+
+```
+
+NOTE: To be honest, I don't really like about using sqlite for test and also development. I prefer to use postgresql, but this is for the implementation. 
+
+Ok, one more thing. In our test, change before All to ensure it's not creating a new database :
+
+```
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync();
+  }
+```
+
+So for staging, when there's no database, the migration file will create it. 
+
+REMEMBER: If we'd like to change the schema, we have to create a new migration file with the newest timeStamp. If not nothing will change. 
+Or we can drop the table first. 
 
 
 

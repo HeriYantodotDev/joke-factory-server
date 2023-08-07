@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import { sequelize } from '../config/database';
 import { Auth, User } from '../models';
 import { 
@@ -7,7 +9,9 @@ import {
 
 
 beforeAll( async () => {
-  await sequelize.sync();
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync();
+  }
 });
 
 beforeEach( async() => {
