@@ -4,3 +4,7 @@ node_modules/
 dist/
 build-client/
 client-temp/
+config/
+models/
+migrations/
+seeders/
