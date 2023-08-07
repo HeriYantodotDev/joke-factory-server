@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import request from 'supertest';
 import { app } from '../app';
 import { User, Auth, UserHelperModel, CredentialBody, AuthHelperModel } from '../models';
@@ -7,7 +9,9 @@ import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 
 beforeAll( async () => {
-  await sequelize.sync();
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync();
+  }
 });
 
 beforeEach( async () => {

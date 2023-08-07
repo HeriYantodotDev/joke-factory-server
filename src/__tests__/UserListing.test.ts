@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import request from 'supertest';
 import { app } from '../app';
 import { User, Auth, UserPagination, UserHelperModel} from '../models';
@@ -61,7 +63,9 @@ async function getUserByID(id = 5, option: optionPostUser = {}) {
 }
 
 beforeAll( async () => {
-  await sequelize.sync();
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync();
+  }
 });
 
 beforeEach( async () => {

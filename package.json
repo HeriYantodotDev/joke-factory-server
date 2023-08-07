@@ -16,6 +16,10 @@
     "test": "NODE_ENV=test jest --runInBand --watchAll",
     "posttest": "NODE_ENV=test ts-node src/test-cleanup.ts",
     "test:coverage": "NODE_ENV=test jest --coverage --runInBand",
+    "test:staging": "NODE_ENV=staging jest --runInBand --watchAll",
+    "migrate:test": "NODE_ENV=staging sequelize-cli db:migrate",
+    "pretest:staging": "npm run prestart && npm run migrate:test",
+    "posttest:staging": "NODE_ENV=staging ts-node src/test-cleanup.ts",
     "lint": "eslint .",
     "ts:check": "tsc -p .",
     "check": "npm run lint && npm run ts:check"

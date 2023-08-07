@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import request from 'supertest';
 import { app } from '../app';
 import { User, Auth, UserHelperModel, AuthHelperModel } from '../models';
@@ -10,7 +12,9 @@ const emailUser1 = 'user1@gmail.com';
 const passwordUser1 = 'A4GuaN@SmZ';
 
 beforeAll( async () => {
-  await sequelize.sync();
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync();
+  }
 });
 
 beforeEach( async () => {
