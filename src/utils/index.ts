@@ -4,3 +4,4 @@ export * from './Errors';
 export * from './Enum';
 export * from './middlewares';
 export * from './JWTTokenService';
+export * from './file';

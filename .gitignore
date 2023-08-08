@@ -9,3 +9,4 @@ staging.sqlite
 uploads-dev/
 uploads-test/
 uploads-staging/
+uploads-prod/

@@ -1,6 +1,7 @@
 import { transporter } from '../config/emailTransporter';
 import { User } from '../models';
 import nodemailer from 'nodemailer';
+import { logger } from '../utils';
 
 export async function sendAccountActivation(user: User): Promise<void | Error> {
   const response = await transporter.sendMail({
@@ -18,8 +19,7 @@ export async function sendAccountActivation(user: User): Promise<void | Error> {
   });
 
   if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.log(nodemailer.getTestMessageUrl(response));
+    logger.info(nodemailer.getTestMessageUrl(response));
   }
 }
 
@@ -39,7 +39,6 @@ export async function sendPasswordReset(user: User): Promise<void | Error> {
   });
 
   if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line no-console
-    console.log(nodemailer.getTestMessageUrl(response));
+    logger.info(nodemailer.getTestMessageUrl(response));
   }
 }
