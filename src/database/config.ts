@@ -14,7 +14,7 @@ if (environment === 'test' || environment === 'development') {
   };
 }
 
-if (environment === 'staging') {
+if (environment === 'staging' || environment === 'production' ) {
   const url = process.env.databaseURL;
   module.exports = {
     [environment as string]: {

@@ -645,6 +645,79 @@ Now let's change our configuration:
 
   This will work both in the sqlite and also postgres.
 
-## 
+## Organizing NPM Scripts
+
+Let's make our npm script neater: 
+
+```
+"scripts": {
+  "start": "npm run clean:compile && NODE_ENV=production npm run migrate && NODE_ENV=production npm run seed && NODE_ENV=production node dist/index.js",
+  "dev": "npm run clean:compile && NODE_ENV=development npm run migrate && NODE_ENV=development npm run seed && NODE_ENV=development node dist/index.js",
+  "test": "npm run clean:compile && NODE_ENV=test npm run migrate && NODE_ENV=test jest --runInBand --watchAll && NODE_ENV=test npm run clean-up",
+  "test:coverage": "npm run clean:compile && NODE_ENV=test npm run migrate && NODE_ENV=test jest --runInBand --coverage && NODE_ENV=test npm run clean-up",
+  "test:staging": "NODE_ENV=staging npm run clean:compile && NODE_ENV=staging npm run migrate && NODE_ENV=staging jest --runInBand --watchAll && NODE_ENV=staging npm run clean-up",
+  "clean:compile": "rimraf dist && tsc -p tsconfig.build.json",
+  "clean-up": "ts-node src/test-cleanup.ts",
+  "seed": "sequelize-cli db:seed:all",
+  "migrate": "sequelize-cli db:migrate",
+  "lint": "eslint .",
+  "type:check": "tsc -p .",
+  "check": "npm run lint && npm run type:check",
+  "placeholder": "npx http-server -c-1 -p 8080 -P http://localhost:3000 --prefix client"
+},
+```
+
+I'm changing a little bit of the implementation here. 
+First of all, I added the seeding command in both start, and dev. 
+
+
+Then in the `config.ts`` I'm changing a little bit to add for the production: 
+```
+import dotenv from 'dotenv';
+const environment = process.env.NODE_ENV as string;
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+
+const dialect = process.env.dialect;
+
+if (environment === 'test' || environment === 'development') {
+  const storage = process.env.storage;
+  module.exports = {
+    [environment as string]: {
+      dialect: dialect,
+      storage: storage,
+    },
+  };
+}
+
+if (environment === 'staging' || environment === 'production' ) {
+  const url = process.env.databaseURL;
+  module.exports = {
+    [environment as string]: {
+      dialect: dialect,
+      url: url,
+    },
+  };
+}
+```
+
+Then in the seeding function, I'm using try and catch to catch for the error: 
+```
+module.exports = {
+  async up(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+    try {
+      const newUserArray = await addMultipleNewUsersArray(25);
+      await queryInterface.bulkInsert('users', newUserArray, {});
+      console.log('Seeding is done');
+    } catch(err) {
+      console.log('Seeding was done before');
+    }
+  },
+
+  async down(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+    await queryInterface.bulkDelete('users', {}, {})
+  }
+}
+```
+
 
 ## 
