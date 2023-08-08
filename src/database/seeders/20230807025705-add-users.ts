@@ -26,8 +26,13 @@ async function addMultipleNewUsersArray(activeUserAccount: number, inactiveUserA
 
 module.exports = {
   async up(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
-    const newUserArray = await addMultipleNewUsersArray(25);
-    await queryInterface.bulkInsert('users', newUserArray, {});
+    try {
+      const newUserArray = await addMultipleNewUsersArray(25);
+      await queryInterface.bulkInsert('users', newUserArray, {});
+      console.log('Seeding is done');
+    } catch(err) {
+      console.log('Seeding was done before');
+    }
   },
 
   async down(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
