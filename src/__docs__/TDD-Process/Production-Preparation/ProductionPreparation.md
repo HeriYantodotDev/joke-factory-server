@@ -720,4 +720,121 @@ module.exports = {
 ```
 
 
-## 
+## Logger
+
+Now let's work with the logger. We're going to use a logger, and a library called [`winston`](https://www.npmjs.com/package/winston)
+
+We're replacing our console.log with our logger. 
+
+So here's the set up in our `logger.ts` : 
+
+```
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+import { createLogger, transports, format } from 'winston';
+
+const environment = process.env.NODE_ENV;
+
+if (!environment) {
+  throw new Error('Please set up the environment dev either in CLI or ENV doc');
+}
+
+const customFormat = format.combine(
+  format.timestamp(),
+  format.printf((info) => {
+    return `${info.timestamp} [${info.level.toUpperCase().padEnd(7)}] : ${info.message}`;
+  })
+);
+
+const consoleTransport = new transports.Console();
+const fileTransport = new transports.File({filename: 'app.log'});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const destinations: any[] = [consoleTransport];
+
+if (environment === 'production') {
+  destinations.push(fileTransport);
+}
+
+export const logger = createLogger({
+  transports: destinations,
+  level: 'debug',
+  format: customFormat,
+  silent: environment === 'test' || environment === 'staging',
+});
+
+```
+
+Great now let's use it in our `index.ts` and also in our `EmailService.ts`: 
+`index.ts`
+```
+import { app } from './app';
+import { sequelize } from './config/database';
+import { AuthHelperModel } from './models';
+import { logger } from './utils';
+
+const PORT = 3000;
+
+sequelize.sync();
+
+AuthHelperModel.scheduleCleanUp();
+
+app.listen(PORT, () => {
+  logger.info(`Listening to port ... ${PORT}. Version: ${process.env.npm_package_version}`);
+});
+
+```
+
+Please take a look the above code. In the code above we also logging the version. 
+
+And now here's the `EmailService.ts` : 
+
+```
+import { transporter } from '../config/emailTransporter';
+import { User } from '../models';
+import nodemailer from 'nodemailer';
+import { logger } from '../utils';
+
+export async function sendAccountActivation(user: User): Promise<void | Error> {
+  const response = await transporter.sendMail({
+    from: 'Joke Factory <hello@jokefactory>',
+    to: user.email,
+    subject: 'Account Activation',
+    html: `
+    <div>
+      Please click link below to active the account
+    <div>
+    <div>
+      <a href="http://localhost:8080/#/login?token=${user.activationToken}">Activate Account</a>
+    <div>
+      `,
+  });
+
+  if (process.env.NODE_ENV === 'development') {
+    logger.info(nodemailer.getTestMessageUrl(response));
+  }
+}
+
+export async function sendPasswordReset(user: User): Promise<void | Error> {
+  const response = await transporter.sendMail({
+    from: 'Joke Factory <hello@jokefactory>',
+    to: user.email,
+    subject: 'Password Reset',
+    html: `
+    <div>
+      Please click link below to reset your password
+    <div>
+    <div>
+      <a href="http://localhost:8080/#/password-reset?reset=${user.passwordResetToken}">Reset</a>
+    <div>
+      `,
+  });
+
+  if (process.env.NODE_ENV === 'development') {
+    logger.info(nodemailer.getTestMessageUrl(response));
+  }
+}
+
+```
+
+Using logger is great, however the file will be bigger and bigger if there are many logs, I'm considering to not log it to the file. 
