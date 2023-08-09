@@ -4,7 +4,8 @@
   "description": "joke-factory app. A portfolio project for practicing TDD, TypeScript, and Express",
   "main": "./dist/index.js",
   "scripts": {
-    "start": "npm run clean:compile && NODE_ENV=production npm run migrate && NODE_ENV=production npm run seed && NODE_ENV=production node dist/index.js",
+    "deploy": "npm run clean:compile",
+    "start": "NODE_ENV=production npm run migrate && NODE_ENV=production npm run seed && NODE_ENV=production node dist/index.js",
     "dev": "npm run clean:compile && NODE_ENV=development npm run migrate && NODE_ENV=development npm run seed && NODE_ENV=development node dist/index.js",
     "test": "npm run clean:compile && NODE_ENV=test npm run migrate && NODE_ENV=test jest --runInBand --watchAll && NODE_ENV=test npm run clean-up",
     "test:coverage": "npm run clean:compile && NODE_ENV=test npm run migrate && NODE_ENV=test jest --runInBand --coverage && NODE_ENV=test npm run clean-up",
@@ -16,7 +17,8 @@
     "lint": "eslint .",
     "type:check": "tsc -p .",
     "check": "npm run lint && npm run type:check",
-    "placeholder": "npx http-server -c-1 -p 8080 -P http://localhost:3000 --prefix client"
+    "placeholder1": "npx http-server -c-1 -p 8080 -P http://localhost:3000 --prefix client",
+    "placeholder2": "npx http-server -c-1 -p 8080 -P https://joke-factory-api.fly.dev/ --prefix client"
   },
   "keywords": [],
   "author": "",
@@ -41,10 +43,12 @@
     "jest-watch-typeahead": "^2.2.2",
     "reflect-metadata": "^0.1.13",
     "smtp-server": "^3.11.0",
+    "sqlite3": "^5.1.6",
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
     "ts-mockito": "^2.6.1",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
@@ -66,8 +70,6 @@
     "rimraf": "^5.0.1",
     "sequelize": "^6.32.1",
     "sequelize-cli": "^6.6.1",
-    "sqlite3": "^5.1.6",
-    "typescript": "^5.1.6",
     "winston": "^3.10.0"
   }
 }
