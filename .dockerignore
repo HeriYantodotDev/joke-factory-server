@@ -1,0 +1,16 @@
+# flyctl launch added from .gitignore
+**/dist
+**/node_modules
+**/build
+**/.env
+**/.env.production
+**/.env.staging
+**/coverage
+**/test.sqlite
+**/database.sqlite
+**/staging.sqlite
+**/uploads-dev
+**/uploads-test
+**/uploads-staging
+**/uploads-prod
+fly.toml
