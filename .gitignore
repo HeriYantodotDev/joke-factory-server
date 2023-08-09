@@ -10,3 +10,4 @@ uploads-dev/
 uploads-test/
 uploads-staging/
 uploads-prod/
+.env.production
