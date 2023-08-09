@@ -846,4 +846,4 @@ Using logger is great, however the file will be bigger and bigger if there are m
 - First of all remove `.env.staging` from the online repository.
 - Update the `databaseURL` for staging to test whether it's connected. 
 - Now let's prepare for the production database, however before that we have to create the app first, then connect it with the database 
-- 
+- It is better to do the CI/CD using github or to run the container first before we push the deployment. However, since this is a simple app, then I think I can push it directly. 
