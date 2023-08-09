@@ -838,3 +838,12 @@ export async function sendPasswordReset(user: User): Promise<void | Error> {
 ```
 
 Using logger is great, however the file will be bigger and bigger if there are many logs, I'm considering to not log it to the file. 
+
+
+
+## Fly Io setup
+
+- First of all remove `.env.staging` from the online repository.
+- Update the `databaseURL` for staging to test whether it's connected. 
+- Now let's prepare for the production database, however before that we have to create the app first, then connect it with the database 
+- 
