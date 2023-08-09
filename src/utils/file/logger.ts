@@ -16,14 +16,14 @@ const customFormat = format.combine(
 );
 
 const consoleTransport = new transports.Console();
-const fileTransport = new transports.File({filename: 'app.log'});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const destinations: any[] = [consoleTransport];
 
-if (environment === 'production') {
-  destinations.push(fileTransport);
-}
+// const fileTransport = new transports.File({filename: 'app.log'});
+// if (environment === 'production') {
+//   destinations.push(fileTransport);
+// }
 
 export const logger = createLogger({
   transports: destinations,
