@@ -2,6 +2,7 @@ dist/
 node_modules/
 build/
 .env
+.env.production
 coverage/
 test.sqlite
 database.sqlite
