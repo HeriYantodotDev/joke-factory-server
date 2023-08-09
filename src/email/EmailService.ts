@@ -18,16 +18,16 @@ export async function sendAccountActivation(user: User): Promise<void | Error> {
     html: `
     <h1>
       Joke Factory - Activation Account
-    <h1>
+    </h1>
     <p>
-      Hi Welcome to my fun project app, Joke Factory.
+      Hi! Welcome to my fun project app: "Joke Factory".
     </p>
     <div>
-      Please click link below to active the account
-    <div>
+      Please click link below to activate the account
+    </div>
     <div>
       <a href=${linkActivation}">Activate Account</a>
-    <div>
+    </div>
       `,
   });
 
@@ -44,13 +44,13 @@ export async function sendPasswordReset(user: User): Promise<void | Error> {
     html: `
     <h1>
       Joke Factory - Password Reset
-    <h1>
+    </h1>
     <div>
       Please click link below to reset your password
-    <div>
+    </div>
     <div>
       <a href=${link}>Reset</a>
-    <div>
+    </div>
       `,
   });
 

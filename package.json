@@ -18,7 +18,7 @@
     "type:check": "tsc -p .",
     "check": "npm run lint && npm run type:check",
     "placeholder1": "npx http-server -c-1 -p 8080 -P http://localhost:3000 --prefix client",
-    "placeholder2": "npx http-server -c-1 -p 8080 -P https://joke-factory-api.fly.dev/ --prefix client"
+    "placeholder2": "npx http-server -c-1 -p 8080 -P https://joke-factory-server.fly.dev --prefix client"
   },
   "keywords": [],
   "author": "",
