@@ -69,3 +69,9 @@ export class ErrorEntityTooLarge extends Error {
   }
 }
 
+export class ErrorAuthPost extends Error {
+  public code = 401;
+  constructor(message: string) {
+    super(message);
+  }
+}

@@ -26,5 +26,6 @@
   "passwordResetRequestSuccess": "Check you email for resetting your password",
   "unauthPasswordReset": "You are not authorized to update your password. Please follow the password reset steps again",
   "profileImageSize": "You're profile image cannot be bigger than 2MB",
-  "unsupportedImageFile": "Only JPEG/JPG or PNG files are allowed"
+  "unsupportedImageFile": "Only JPEG/JPG or PNG files are allowed",
+  "unauthorizedJokeSubmit": "You are not authorized to post Jokes"
 }

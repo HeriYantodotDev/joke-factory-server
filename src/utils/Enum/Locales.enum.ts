@@ -24,5 +24,6 @@ export enum Locales {
   passwordResetRequestSuccess = 'passwordResetRequestSuccess',
   unauthPasswordReset = 'unauthPasswordReset',
   profileImageSize = 'profileImageSize',
-  unsupportedImageFile = 'unsupportedImageFile'
+  unsupportedImageFile = 'unsupportedImageFile',
+  unauthorizedJokeSubmit = 'unauthorizedJokeSubmit'
 }
