@@ -8,7 +8,8 @@ import {
   ErrorAuthFailed,
   ErrorAuthForbidden,
   ErrorEmailNotInuse,
-  ErrorEntityTooLarge
+  ErrorEntityTooLarge,
+  ErrorAuthPost
 } from './ErrorClass';
 import { ErrorResponse, ValidationErrorResponse } from '../../models';
 
@@ -46,6 +47,7 @@ export function ErrorHandle(err: unknown, req: Request, res: Response, next: Nex
     ErrorAuthFailed,
     ErrorAuthForbidden,
     ErrorEmailNotInuse,
+    ErrorAuthPost,
   ];
   ErrorGroupSimple.some((errorClass) => {
     if (err instanceof errorClass) {
