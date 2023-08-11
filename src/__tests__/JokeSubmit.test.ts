@@ -3,10 +3,13 @@ import { app } from '../app';
 import { User, Auth, UserHelperModel } from '../models';
 import { optionPostUser } from './UserRegister.test';
 import { sequelize } from '../config/database';
+import { Joke } from '../models/joke';
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
+
 const emailUser1 = 'user1@gmail.com';
 const passwordUser1 = 'A4GuaN@SmZ';
+const content = 'Joke Content';
 
 beforeAll( async () => {
   if (process.env.NODE_ENV === 'test') {
@@ -17,6 +20,7 @@ beforeAll( async () => {
 beforeEach( async () => {
   await User.destroy({where: {}});
   await Auth.destroy({where: {}});
+  await Joke.destroy({where: {}});
 });
 
 afterAll(async () => {
@@ -77,9 +81,7 @@ describe('Post Joke', () => {
   test('returns 200 when valid Hoax submitted with authorized user', async () => {
     await UserHelperModel.addMultipleNewUsers(1,0);
     const response = await postJoke(
-      {
-        content: 'Joke Content',
-      },
+      {content},
       {
         auth: {email: emailUser1, password: passwordUser1},
       }
@@ -87,6 +89,53 @@ describe('Post Joke', () => {
     expect(response.status).toBe(200);
   });
 
+  test('saves the joke to database, when authorized user sends valid request', async () => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+    await postJoke(
+      {content},
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+    
+    const jokes = await Joke.findAll();
+    expect(jokes.length).toBe(1);
+  });
+
+  test('saves joke content and timeStamp to database, when authorized user sends valid request', async () => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+    const beforeSubmit = Date.now();
+    await postJoke(
+      {content},
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+    
+    const jokes = await Joke.findAll();
+    const savedJoke = jokes[0];
+    expect(savedJoke.content).toBe(content);
+    expect(savedJoke.timestamp).toBeGreaterThan(beforeSubmit);
+    expect(savedJoke.timestamp).toBeLessThan(Date.now());
+  });
+
+  test.each`
+  lang      | message
+  ${'en'}   | ${en.jokeSubmitSuccess}
+  ${'id'}   | ${id.jokeSubmitSuccess}
+  `('returns $message to success submit when language $lang', async ({lang, message}) => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const response = await postJoke(
+      {content}, 
+      {
+        language: lang,
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    expect(response.body.message).toBe(message);
+  });
 
 
   

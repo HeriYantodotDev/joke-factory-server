@@ -220,12 +220,228 @@ And we're passing our test. Next, we're going to send a request with a valid bod
   }
   ```
 
+  In this route, we've checking the authentication first, before proceeding it. I think it's better if we protect this route with the authentication first and throw error get to the helper controller. 
+
+  However it is better to put this checking into a middleware before the actual implementation. So the controller would be like this : 
+
+  ```
+  @routerConfig('/api/1.0/jokes')
+  class JokesController {
+    @post('/', JokeHelperController.httpJokePost)
+    @use(checkAuthMWForJokeRoutes)
+    jokesPost(): void{}
+  }
+  ```
+
+  Then here's the middleware: 
+
+  ```
+  export async function checkAuthMWForJokeRoutes(
+    req: RequestWithAuthenticatedUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+
+    if (!req.authenticatedUser) {
+      ErrorHandle(new ErrorAuthPost(Locales.unauthorizedJokeSubmit), req, res, next);
+      return;
+    }
+
+    next();
+  }
+  ```
+
+  Now, in the implementation we can keep it clean like this : 
+
+  ```
+  export class JokeHelperController {
+    public static async httpJokePost(
+      req: RequestWithAuthenticatedUser,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> {
+      try {
+        res.send();
+      } catch(err) {
+        next(err);
+        return;
+      }
+    }
+  }
+  ```
 
 
 
-  ## 
+
+## Saving Jokes to database
+
+Now it's time to save the jokes to the database
+
+Here are several tests:
+
+```
+
+  test('returns 200 when valid Hoax submitted with authorized user', async () => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+    const response = await postJoke(
+      {content},
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+    expect(response.status).toBe(200);
+  });
+
+  test('saves the joke to database, when authorized user sends valid request', async () => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+    await postJoke(
+      {content},
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+    
+    const jokes = await Joke.findAll();
+    expect(jokes.length).toBe(1);
+  });
+
+  test('saves joke content and timeStamp to database, when authorized user sends valid request', async () => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+    const beforeSubmit = Date.now();
+    await postJoke(
+      {content},
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+    
+    const jokes = await Joke.findAll();
+    const savedJoke = jokes[0];
+    expect(savedJoke.content).toBe(content);
+    expect(savedJoke.timestamp).toBeGreaterThan(beforeSubmit);
+    expect(savedJoke.timestamp).toBeLessThan(Date.now());
+  });
+
+  test.each`
+  lang      | message
+  ${'en'}   | ${en.jokeSubmitSuccess}
+  ${'id'}   | ${id.jokeSubmitSuccess}
+  `('returns $message to success submit when language $lang', async ({lang, message}) => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const response = await postJoke(
+      {content}, 
+      {
+        language: lang,
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    expect(response.body.message).toBe(message);
+  });
+```
+
+For the implementation, first of all we have to create the model for it first: 
+
+```
+import {
+  Model,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+  DataTypes
+} from 'sequelize';
+
+import { sequelize } from '../../config/database';
+
+export class Joke extends Model<
+  InferAttributes<Joke>,
+  InferCreationAttributes<Joke>
+> {
+  declare id: CreationOptional<number>;
+  declare content: string;
+  declare timestamp: CreationOptional<number>;
+  declare createdAt: CreationOptional<Date>;
+  declare updatedAt: CreationOptional<Date>;
+}
+
+Joke.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    content: {
+      type: DataTypes.STRING,
+    },
+    timestamp: DataTypes.BIGINT,
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
+  },
+  {
+    sequelize,
+    modelName: 'joke',
+  }
+);
+```
+
+Next we create a helper function for this `Joke.helper.model` :
+
+```
+import { Joke } from './Joke.model';
+import { 
+  BodyRequestHttpPostJokeType,
+  JokeObjectType 
+} from './Joke.types';
+
+export class JokeHelperModel {
+  public static async createJoke(body: BodyRequestHttpPostJokeType) {
+    const joke: JokeObjectType = {
+      content: body.content,
+      timestamp: Date.now(),
+    }
+    
+    await Joke.create(joke);
+  }
+}
+```
+
+Also please the check the new type that we just added, and also the translation for success cases like this : 
+```
+  "jokeSubmitSuccess": "Joke is saved"
+```
+
+The final touch is this : 
+
+```
+  public static async httpJokePost(
+    req: RequestWithAuthenticatedUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      await JokeHelperModel.createJoke(req.body);
+      const response:SuccessResponse = {
+        message: req.t(Locales.jokeSubmitSuccess),
+      };
+
+      res.send(response);
+    } catch(err) {
+      next(err);
+      return;
+    }
+  }
+}
+```
+
+We ensure that we send the success case with translation
 
 
-  ## 
+## 
+
+##
+
+ 
 
 
