@@ -5,6 +5,7 @@ import { app } from '../app';
 import { User, Auth, UserHelperModel, AuthHelperModel } from '../models';
 import { optionPostUser } from './UserRegister.test';
 import { sequelize } from '../config/database';
+import { Joke } from '../models/joke';
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 
@@ -184,6 +185,31 @@ describe('User Delete', () => {
     
     expect(token1InDM).toBeNull();
     expect(token2InDM).toBeNull();
+  });
+
+  test('deletes jokes from the database when delete user request sent from authorized user', async() => {
+    const userList = await UserHelperModel.addMultipleNewUsers(1);
+    const token = await auth({
+      auth: { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }});
+
+    await request(app)
+      .post('/api/1.0/jokes')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+      content: 'Jokes Content a lot!!!',
+    });
+
+    await deleteUser(
+      userList[0].id, 
+      {token}
+    );
+    
+    const jokes = await Joke.findAll();
+
+    expect(jokes.length).toBe(0);
   });
   
 });

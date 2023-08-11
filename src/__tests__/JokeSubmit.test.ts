@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { app } from '../app';
-import { User, Auth, UserHelperModel } from '../models';
+import { User, UserHelperModel } from '../models';
 import { optionPostUser } from './UserRegister.test';
 import { sequelize } from '../config/database';
 import { Joke } from '../models/joke';
@@ -20,8 +20,7 @@ beforeAll( async () => {
 
 beforeEach( async () => {
   await User.destroy({where: {}});
-  await Auth.destroy({where: {}});
-  await Joke.destroy({where: {}});
+  // we don't have to destroy other databases, since if User is destroyed, other tables will be destroyed too.
 });
 
 afterAll(async () => {
@@ -199,4 +198,18 @@ describe('Post Joke', () => {
     expect(response.body.validationErrors.content).toBe(message);
   });
 
+  test('stores joke owner id in database', async () => {
+    const user = await UserHelperModel.addMultipleNewUsers(1,0);
+
+    await postJoke(
+      {content}, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    const jokes = await Joke.findAll();
+    const joke = jokes[0];
+    expect(joke.userID).toBe(user[0].id);
+  });
 });

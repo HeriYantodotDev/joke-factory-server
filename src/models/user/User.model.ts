@@ -9,6 +9,7 @@ import {
 import { sequelize } from '../../config/database';
 
 import { Auth } from '../auth';
+import { Joke } from '../joke';
 
 export class User extends Model<
   InferAttributes<User>,
@@ -61,4 +62,9 @@ User.init(
 User.hasMany(Auth, {
   onDelete: 'cascade',
   foreignKey: 'userID',
+});
+
+User.hasMany(Joke, {
+  onDelete: 'cascade',
+  foreignKey: 'userID'
 });

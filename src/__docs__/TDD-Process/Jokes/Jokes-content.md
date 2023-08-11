@@ -587,13 +587,159 @@ Therefore we have to create an adjustment a little bit in our test:
 
 ## Joke User Relationship
 
+Now let's add user data to Joke table. 
+
+We're going to add tests to to file, the `JokeSubmit.test.ts` and also `UserDelete.test.ts`. 
+
+Now let's our first test: 
+
+```
+test('stores joke owner id in database', async () => {
+  const user = await UserHelperModel.addMultipleNewUsers(1,0);
+
+  await postJoke(
+    {content}, 
+    {
+      auth: {email: emailUser1, password: passwordUser1},
+    }
+  );
+
+  const jokes = await Joke.findAll();
+  const joke = jokes[0];
+  expect(joke.userID).toBe(user[0].id);
+});
+```
+
+Now let's change the migration file and also the model file: 
+
+Migration: 
+```
+import { QueryInterface, DataTypes } from 'sequelize';
+
+module.exports = {
+  async up(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+    await queryInterface.createTable('jokes', {
+      id: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      content: {
+        type: Sequelize.STRING,
+      },
+      timestamp: {
+        type: Sequelize.BIGINT,
+      },
+      userID: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onDelete: 'cascade'
+      },
+      createdAt: Sequelize.DATE,
+      updatedAt: Sequelize.DATE,
+    });
+  },
+
+  async down(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+    await queryInterface.dropTable('jokes');
+  }
+}
+```
+
+Here's we're adding a new column, however we have to delete our previous table. There's another way by creating a new migration file, and then we add this new column.
+But I think this is okay, since it's quite simple. 
+
+Then let's change the `Joke.model`:
+
+```
+export class Joke extends Model<
+  InferAttributes<Joke>,
+  InferCreationAttributes<Joke>
+> {
+  declare id: CreationOptional<number>;
+  declare content: string;
+  declare timestamp: CreationOptional<number>;
+  declare userID: ForeignKey<number>;
+  declare createdAt: CreationOptional<Date>;
+  declare updatedAt: CreationOptional<Date>;
+}
+
+Joke.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    content: {
+      type: DataTypes.STRING,
+    },
+    timestamp: DataTypes.BIGINT,
+    userID: {
+      type: DataTypes.INTEGER,
+    },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
+  },
+  {
+    sequelize,
+    modelName: 'joke',
+  }
+);
+
+```
+
+Great, it's not done yet, we have to modify the `User` model: 
+
+```
+User.hasMany(Joke, {
+  onDelete: 'cascade',
+  foreignKey: 'userID'
+});
+```
+
+Okay, the last one is to create a test at User at `UserDelete.test`: 
+
+```
+test('deletes jokes from the database when delete user request sent from authorized user', async() => {
+  const userList = await UserHelperModel.addMultipleNewUsers(1);
+  const token = await auth({
+    auth: { 
+      email : emailUser1, 
+      password: passwordUser1,
+    }});
+
+  await request(app)
+    .post('/api/1.0/jokes')
+    .set('Authorization', `Bearer ${token}`)
+    .send({
+    content: 'Jokes Content a lot!!!',
+  });
+
+  await deleteUser(
+    userList[0].id, 
+    {token}
+  );
+  
+  const jokes = await Joke.findAll();
+
+  expect(jokes.length).toBe(0);
+});
+```
+
+Great now, we can check that it passes the test. 
+
 ## Listing Jokes
 
 ## Listing Jokes of a User
 
 ## Running Test with Postgres
 
-## Deployement
+## Deployment
 
  
 
