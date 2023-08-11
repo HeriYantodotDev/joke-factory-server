@@ -438,9 +438,122 @@ The final touch is this :
 We ensure that we send the success case with translation
 
 
-## 
+## Validation
 
-##
+Let's ensure that the user sends the valid joke. Let's add our validation test:
+
+```
+  test.each`
+  lang      | message
+  ${'en'}   | ${en.validationFailure}
+  ${'id'}   | ${id.validationFailure}
+  `('returns 400 and $message when the content less than 10 char when language $lang', async ({lang, message}) => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const response = await postJoke(
+      {content: invalidContent}, 
+      {
+        language: lang,
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(message);
+  });
+
+  test('returns validation error body when an invalid joke post by auth user', async() => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const nowInMS = Date.now();
+
+    const response = await postJoke(
+      {content: invalidContent}, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    const error = response.body;
+
+    expect(error.timeStamp).toBeGreaterThan(nowInMS);
+    expect(error.path).toBe('/api/1.0/jokes');
+    expect(Object.keys(error)).toEqual(['path', 'timeStamp', 'message', 'validationErrors']);
+  });
+
+  test.each`
+    lang        | content                 | contentForDesc      |message
+    ${'en'}     | ${null}                 | ${null}             |${en.errorJokeContentNull}
+    ${'en'}     | ${'a'.repeat(9)}        | ${'short'}          |${en.jokeContentSize}
+    ${'en'}     | ${'a'.repeat(5001)}     | ${'very long'}      |${en.jokeContentSize}
+    ${'id'}     | ${null}                 | ${null}             |${id.errorJokeContentNull}
+    ${'id'}     | ${'a'.repeat(9)}        | ${'short'}          |${id.jokeContentSize}
+    ${'id'}     | ${'a'.repeat(5001)}     | ${'very long'}      |${id.jokeContentSize}
+  `('returns $message when content is $contentForDesc and language is $lang', async ({lang, content, message}) => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const response = await postJoke(
+      {content: content}, 
+      {
+        language: lang,
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    
+    expect(response.body.validationErrors.content).toBe(message);
+  });
+```
+
+As you can see here there are three tests to check for the validation. 
+First off all let's add the translation and also the enum: 
+```
+"errorJokeContentEmpty": "\"content\" is not allowed to be empty",
+"errorJokeContentNull": "\"content\" must be a text",
+"jokeContentSize": "\"content\" must be at least 10 characters long and no longer than 5000 characters"
+```
+
+The code above is for English, but we also need to add for ID and also the `Locales.enum.ts`. 
+
+Great, the next thing to do is to fix the validation schema: `jokePostSchema`, so it contains the same error message. 
+ 
+```
+import Joi from 'joi';
+import { Locales } from '../Enum';
+
+export const jokePostSchema = Joi.object({
+  content: Joi.string()
+    .required()
+    .min(10)
+    .max(5000)
+    .messages({
+      'any.required': Locales.errorJokeContentEmpty,
+      'string.empty': Locales.errorJokeContentEmpty,
+      'string.base': Locales.errorJokeContentNull,
+      'string.min' : Locales.jokeContentSize,
+      'string.max' : Locales.jokeContentSize,
+    }),
+}).options({
+    allowUnknown: false,
+}).messages({
+  'object.unknown': Locales.customFieldNotAllowed,
+});
+
+```
+
+Okay that's it. Then our validation error handlers will take care the rest. 
+
+## Joke Migration
+
+## Joke User Relationship
+
+## Listing Jokes
+
+## Listing Jokes of a User
+
+## Running Test with Postgres
+
+## Deployement
 
  
 

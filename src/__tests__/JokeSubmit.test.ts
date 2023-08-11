@@ -10,6 +10,7 @@ import id from '../locales/id/translation.json';
 const emailUser1 = 'user1@gmail.com';
 const passwordUser1 = 'A4GuaN@SmZ';
 const content = 'Joke Content';
+const invalidContent = '123456789';
 
 beforeAll( async () => {
   if (process.env.NODE_ENV === 'test') {
@@ -135,6 +136,67 @@ describe('Post Joke', () => {
     );
 
     expect(response.body.message).toBe(message);
+  });
+
+  test.each`
+  lang      | message
+  ${'en'}   | ${en.validationFailure}
+  ${'id'}   | ${id.validationFailure}
+  `('returns 400 and $message when the content less than 10 char when language $lang', async ({lang, message}) => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const response = await postJoke(
+      {content: invalidContent}, 
+      {
+        language: lang,
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(message);
+  });
+
+  test('returns validation error body when an invalid joke post by auth user', async() => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const nowInMS = Date.now();
+
+    const response = await postJoke(
+      {content: invalidContent}, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    const error = response.body;
+
+    expect(error.timeStamp).toBeGreaterThan(nowInMS);
+    expect(error.path).toBe('/api/1.0/jokes');
+    expect(Object.keys(error)).toEqual(['path', 'timeStamp', 'message', 'validationErrors']);
+  });
+
+  test.each`
+    lang        | content                 | contentForDesc      |message
+    ${'en'}     | ${null}                 | ${null}             |${en.errorJokeContentNull}
+    ${'en'}     | ${'a'.repeat(9)}        | ${'short'}          |${en.jokeContentSize}
+    ${'en'}     | ${'a'.repeat(5001)}     | ${'very long'}      |${en.jokeContentSize}
+    ${'id'}     | ${null}                 | ${null}             |${id.errorJokeContentNull}
+    ${'id'}     | ${'a'.repeat(9)}        | ${'short'}          |${id.jokeContentSize}
+    ${'id'}     | ${'a'.repeat(5001)}     | ${'very long'}      |${id.jokeContentSize}
+  `('returns $message when content is $contentForDesc and language is $lang', async ({lang, content, message}) => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const response = await postJoke(
+      {content: content}, 
+      {
+        language: lang,
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    
+    expect(response.body.validationErrors.content).toBe(message);
   });
 
 

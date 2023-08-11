@@ -28,5 +28,8 @@
   "profileImageSize": "Ukuran Gambar anda tidak boleh lebih dari 2MB",
   "unsupportedImageFile": "Hanya dokumen JPEG/JPG atau PNG files yang diperbolehkan",
   "unauthorizedJokeSubmit": "Anda tidak diperbolehkan untuk mengirikan Jokes",
-  "jokeSubmitSuccess": "Joke berhasil disimpan"
+  "jokeSubmitSuccess": "Joke berhasil disimpan",
+  "errorJokeContentEmpty": "\"konten\" tidak boleh kosong",
+  "errorJokeContentNull": "\"konten\" harus berupa text",
+  "jokeContentSize": "\"konten\" minimal harus 3 karakter and tidak lebih dari 5000 karakter"
 }
