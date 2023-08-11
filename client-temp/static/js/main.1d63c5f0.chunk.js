@@ -163,7 +163,7 @@
           return g.a.put('/api/1.0/users/'.concat(e), t);
         },
         w = function (e) {
-          return g.a.post('/api/1.0/hoaxes', e);
+          return g.a.post('/api/1.0/jokes', e);
         },
         y = function (e) {
           var t =
@@ -172,13 +172,13 @@
                 : 0,
             a = e
               ? '/api/1.0/users/'.concat(e, '/hoaxes?page=')
-              : '/api/1.0/hoaxes?page=';
+              : '/api/1.0/jokes?page=';
           return g.a.get(a + t);
         },
         k = function (e, t) {
           var a = t
             ? '/api/1.0/users/'.concat(t, '/hoaxes/').concat(e)
-            : '/api/1.0/hoaxes/'.concat(e);
+            : '/api/1.0/jokes/'.concat(e);
           return g.a.get(a);
         },
         C = function (e, t) {
@@ -186,14 +186,14 @@
             ? '/api/1.0/users/'
                 .concat(t, '/hoaxes/')
                 .concat(e, '?direction=after')
-            : '/api/1.0/hoaxes/'.concat(e, '?direction=after');
+            : '/api/1.0/jokes/'.concat(e, '?direction=after');
           return g.a.get(a);
         },
         S = function (e) {
-          return g.a.post('/api/1.0/hoaxes/attachments', e);
+          return g.a.post('/api/1.0/jokes/attachments', e);
         },
         L = function (e) {
-          return g.a.delete('/api/1.0/hoaxes/'.concat(e));
+          return g.a.delete('/api/1.0/jokes/'.concat(e));
         },
         A = function (e) {
           return g.a.delete('/api/1.0/users/'.concat(e));
@@ -991,8 +991,8 @@
               },
               [v]
             );
-          var I = E('post', '/api/1.0/hoaxes', !0),
-            z = E('post', '/api/1.0/hoaxes/attachments', !0),
+          var I = E('post', '/api/1.0/jokes', !0),
+            z = E('post', '/api/1.0/jokes/attachments', !0),
             T = (function () {
               var e = Object(u.a)(
                 o.a.mark(function e() {
@@ -1131,7 +1131,7 @@
                       r.a.createElement(b, {
                         className: 'btn btn-primary',
                         onClick: T,
-                        text: 'Hoaxify',
+                        text: 'Post',
                         pendingApiCall: I,
                         disabled: I || z,
                       }),
@@ -1229,7 +1229,7 @@
             O = Object(l.a)(h, 2),
             j = O[0],
             x = O[1],
-            N = E('delete', '/api/1.0/hoaxes/'.concat(p), !0),
+            N = E('delete', '/api/1.0/jokes/'.concat(p), !0),
             w = Object(f.b)(),
             y = w.t,
             k = w.i18n,
@@ -1362,7 +1362,7 @@
             v = Object(ee.h)().userid,
             g = v
               ? '/api/1.0/users/'.concat(v, '/hoaxes?page=')
-              : '/api/1.0/hoaxes?page=',
+              : '/api/1.0/jokes?page=',
             h = E('get', g),
             O = 0,
             j = 0;
@@ -1373,13 +1373,13 @@
           }
           var N = v
               ? '/api/1.0/users/'.concat(v, '/hoaxes/').concat(O)
-              : '/api/1.0/hoaxes/'.concat(O),
+              : '/api/1.0/jokes/'.concat(O),
             w = E('get', N, !0),
             S = v
               ? '/api/1.0/users/'
                   .concat(v, '/hoaxes/')
                   .concat(j, '?direction=after')
-              : '/api/1.0/hoaxes/'.concat(j, '?direction=after'),
+              : '/api/1.0/jokes/'.concat(j, '?direction=after'),
             L = E('get', S, !0);
           Object(n.useEffect)(
             function () {
