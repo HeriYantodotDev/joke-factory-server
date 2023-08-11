@@ -545,6 +545,46 @@ Okay that's it. Then our validation error handlers will take care the rest.
 
 ## Joke Migration
 
+When we run our staging test, if failed. Due that we haven't created the migration table for the `joke`.
+
+Let's create the migration file. Since we're using TS then let's create in manually, duplicate the previous migration file and rename it, now here's the migration: 
+```
+import { QueryInterface, DataTypes } from 'sequelize';
+
+module.exports = {
+  async up(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+    await queryInterface.createTable('jokes', {
+      id: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      content: {
+        type: Sequelize.STRING,
+      },
+      timestamp: {
+        type: Sequelize.BIGINT,
+      },
+      createdAt: Sequelize.DATE,
+      updatedAt: Sequelize.DATE,
+    });
+  },
+
+  async down(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+    await queryInterface.dropTable('jokes');
+  }
+}
+```
+
+
+
+Remember:
+In SQLite3, BIGINT values are stored as 64-bit integers, while in PostgreSQL, they are stored as text. This means that when you query a BIGINT column in SQLite3, you will get back a number, but when you query the same column in PostgreSQL, you will get back a string.
+
+Therefore we have to create an adjustment a little bit in our test:
+
+
 ## Joke User Relationship
 
 ## Listing Jokes

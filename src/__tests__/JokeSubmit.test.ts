@@ -116,8 +116,8 @@ describe('Post Joke', () => {
     const jokes = await Joke.findAll();
     const savedJoke = jokes[0];
     expect(savedJoke.content).toBe(content);
-    expect(savedJoke.timestamp).toBeGreaterThan(beforeSubmit);
-    expect(savedJoke.timestamp).toBeLessThan(Date.now());
+    expect(Number(savedJoke.timestamp)).toBeGreaterThan(beforeSubmit);
+    expect(Number(savedJoke.timestamp)).toBeLessThan(Date.now());
   });
 
   test.each`
@@ -199,6 +199,4 @@ describe('Post Joke', () => {
     expect(response.body.validationErrors.content).toBe(message);
   });
 
-
-  
 });
