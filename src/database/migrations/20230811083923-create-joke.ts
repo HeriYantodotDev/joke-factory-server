@@ -15,6 +15,14 @@ module.exports = {
       timestamp: {
         type: Sequelize.BIGINT,
       },
+      userID: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onDelete: 'cascade'
+      },
       createdAt: Sequelize.DATE,
       updatedAt: Sequelize.DATE,
     });

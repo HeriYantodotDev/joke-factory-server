@@ -66,9 +66,13 @@ export interface RequestWithPagination extends Request {
     size: number,
   },
 }
-//do we need this?
+
 export interface UserWithIDOnly {
   id: number | undefined,
+}
+
+export interface UserWithIDOnlyNumber {
+  id: number,
 }
 
 export interface RequestWithAuthenticatedUser extends Request {

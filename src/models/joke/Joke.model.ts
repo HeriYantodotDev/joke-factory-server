@@ -3,7 +3,8 @@ import {
   InferAttributes,
   InferCreationAttributes,
   CreationOptional,
-  DataTypes
+  DataTypes,
+  ForeignKey
 } from 'sequelize';
 
 import { sequelize } from '../../config/database';
@@ -15,6 +16,7 @@ export class Joke extends Model<
   declare id: CreationOptional<number>;
   declare content: string;
   declare timestamp: CreationOptional<number>;
+  declare userID: ForeignKey<number>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -30,6 +32,9 @@ Joke.init(
       type: DataTypes.STRING,
     },
     timestamp: DataTypes.BIGINT,
+    userID: {
+      type: DataTypes.INTEGER,
+    },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },
