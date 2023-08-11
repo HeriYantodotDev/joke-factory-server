@@ -28,5 +28,8 @@
   "profileImageSize": "You're profile image cannot be bigger than 2MB",
   "unsupportedImageFile": "Only JPEG/JPG or PNG files are allowed",
   "unauthorizedJokeSubmit": "You are not authorized to post Jokes",
-  "jokeSubmitSuccess": "Joke is saved"
+  "jokeSubmitSuccess": "Joke is saved",
+  "errorJokeContentEmpty": "\"content\" is not allowed to be empty",
+  "errorJokeContentNull": "\"content\" must be a text",
+  "jokeContentSize": "\"content\" must be at least 10 characters long and no longer than 5000 characters"
 }

@@ -26,5 +26,8 @@ export enum Locales {
   profileImageSize = 'profileImageSize',
   unsupportedImageFile = 'unsupportedImageFile',
   unauthorizedJokeSubmit = 'unauthorizedJokeSubmit',
-  jokeSubmitSuccess = 'jokeSubmitSuccess'
+  jokeSubmitSuccess = 'jokeSubmitSuccess',
+  errorJokeContentEmpty = 'errorJokeContentEmpty',
+  errorJokeContentNull = 'errorJokeContentNull',
+  jokeContentSize = 'jokeContentSize',
 }

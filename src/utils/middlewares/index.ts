@@ -6,3 +6,4 @@ export * from './basicAuthenticationMW';
 export * from './tokenAuthenticationMW';
 export * from './passwordResetTokenCheckMW';
 export * from './checkAuthMW';
+export * from './checkAuthMWForJokeRoutes';
