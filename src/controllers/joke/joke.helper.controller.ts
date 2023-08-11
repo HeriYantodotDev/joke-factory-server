@@ -1,7 +1,8 @@
-import { NextFunction, Request, Response } from 'express';
-import { ErrorAuthPost } from '../../utils';
-import { Locales } from '../../utils';
+import { NextFunction, Response } from 'express';
 import { RequestWithAuthenticatedUser } from '../../models';
+import { JokeHelperModel } from '../../models/joke';
+import { SuccessResponse } from '../../models/joke';
+import { Locales } from '../../utils';
 
 export class JokeHelperController {
   public static async httpJokePost(
@@ -10,10 +11,12 @@ export class JokeHelperController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if (!req.authenticatedUser) {
-        throw new ErrorAuthPost(Locales.unauthorizedJokeSubmit);
-      }
-      res.send();
+      await JokeHelperModel.createJoke(req.body);
+      const response:SuccessResponse = {
+        message: req.t(Locales.jokeSubmitSuccess),
+      };
+
+      res.send(response);
     } catch(err) {
       next(err);
       return;
