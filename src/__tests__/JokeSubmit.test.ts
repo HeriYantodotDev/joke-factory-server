@@ -4,6 +4,7 @@ import { User, UserHelperModel } from '../models';
 import { optionPostUser } from './UserRegister.test';
 import { sequelize } from '../config/database';
 import { Joke } from '../models/joke';
+import { Auth } from '../models';
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 
@@ -20,6 +21,8 @@ beforeAll( async () => {
 
 beforeEach( async () => {
   await User.destroy({where: {}});
+  await Auth.destroy({where: {}});
+  await Joke.destroy({where: {}});
   // we don't have to destroy other databases, since if User is destroyed, other tables will be destroyed too.
 });
 
@@ -86,6 +89,7 @@ describe('Post Joke', () => {
         auth: {email: emailUser1, password: passwordUser1},
       }
     );
+
     expect(response.status).toBe(200);
   });
 

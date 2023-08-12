@@ -68,3 +68,7 @@ User.hasMany(Joke, {
   onDelete: 'cascade',
   foreignKey: 'userID'
 });
+
+Joke.belongsTo(User, {
+  foreignKey: 'userID'
+});
