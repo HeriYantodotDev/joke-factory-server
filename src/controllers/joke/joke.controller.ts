@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
-import { post, use, routerConfig } from '../../decorators'; 
+import { post, get, use, routerConfig } from '../../decorators'; 
 import { JokeHelperController } from './joke.helper.controller';
 import { checkAuthMWForJokeRoutes,
   jokePostSchema,
   validationErrorGenerator,
-  bodyValidatorMW
+  bodyValidatorMW,
+  paginationMW
 } from '../../utils';
 
 const validationOption = {abortEarly: false};
@@ -15,4 +16,8 @@ class JokesController {
   @use(bodyValidatorMW(jokePostSchema, validationErrorGenerator, validationOption))
   @use(checkAuthMWForJokeRoutes)
   jokesPost(): void{}
+
+  @get('/', JokeHelperController.httpGetJokes)
+  @use(paginationMW)
+  jokesGet(): void{}
 }

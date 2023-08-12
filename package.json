@@ -9,7 +9,7 @@
     "dev": "npm run clean:compile && NODE_ENV=development npm run migrate && NODE_ENV=development npm run seed && NODE_ENV=development node dist/index.js",
     "test": "npm run clean:compile && NODE_ENV=test npm run migrate && NODE_ENV=test jest --runInBand --watchAll && NODE_ENV=test npm run clean-up",
     "test:coverage": "npm run clean:compile && NODE_ENV=test npm run migrate && NODE_ENV=test jest --runInBand --coverage && NODE_ENV=test npm run clean-up",
-    "test:staging": "NODE_ENV=staging npm run clean:compile && NODE_ENV=staging npm run migrate && NODE_ENV=staging jest --runInBand --watchAll && NODE_ENV=staging npm run clean-up",
+    "test:staging": "npm run clean:compile && NODE_ENV=staging npm run migrate && NODE_ENV=staging jest --runInBand --watchAll && NODE_ENV=staging npm run clean-up",
     "clean:compile": "rimraf dist && tsc -p tsconfig.build.json",
     "clean-up": "ts-node src/test-cleanup.ts",
     "seed": "sequelize-cli db:seed:all",

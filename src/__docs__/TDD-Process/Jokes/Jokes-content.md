@@ -735,7 +735,295 @@ Great now, we can check that it passes the test.
 
 ## Listing Jokes
 
+Now let's list all the jokes with pagination. Let's create a new test. It's quite similar with user listing. Now let's add our first test. After copy the test file, we need to comment most of it expect for the first test, and modify the function a little bit, so it'll look like this: 
+
+- Test:
+  ```
+  describe('Listing All Jokes', () => {
+  async function getJokes (page = 0 ) {
+    const agent = request(app).get('/api/1.0/jokes').query({page});
+    return await agent;
+  }
+
+  test('returns 200 ok when there are no jokes in database', async () => {
+    const response = await getJokes();
+    expect(response.status).toBe(200);
+  });
+  }
+  ```
+- Implementation: 
+  Now let's set our route. 
+
+In fact, the implementation is really similar with the UserListing, therefore, we only need to modify it a little bit. 
+
+Here's the full test for `JokeListing.test`:
+
+```
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+import request from 'supertest';
+import { app } from '../app';
+import { optionPostUser } from './UserRegister.test';
+
+import { User, Auth, Joke, JokePaginationResponseTypes, UserHelperModel} from '../models';
+import { sequelize } from '../config/database';
+import en from '../locales/en/translation.json';
+import id from '../locales/id/translation.json';
+
+const responseJokePaginationBlank: JokePaginationResponseTypes = {
+  content: [],
+  page: 0,
+  size: 10,
+  totalPages: 0,
+};
+
+async function getJokeWithSize (size = 10) {
+  return await request(app).get('/api/1.0/jokes').query({size});
+}
+
+async function getUserByID(id = 5, option: optionPostUser = {}) {
+  const agent = request(app).get(`/api/1.0/users/${id}`);
+  if (option.language) {
+    agent.set('Accept-Language', option.language);
+  }
+
+  return await agent;
+}
+
+beforeAll( async () => {
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync();
+  }
+});
+
+beforeEach( async () => {
+  await User.destroy({where: {}});
+  await Auth.destroy({where: {}});
+});
+
+afterAll(async () => {
+  await sequelize.close();
+});
+
+describe('Listing All Jokes', () => {
+  async function getJokes(page = 0 ) {
+    const agent = request(app).get('/api/1.0/jokes').query({page});
+    return await agent;
+  }
+
+  async function addJokes(count: number) {
+    const user = await UserHelperModel.addMultipleNewUsers(count,0);
+    for (let i=0; i < count; i++) {
+      await Joke.create({
+        content: `Content Of Great Jokes all ${i+1}`,
+        timestamp: Date.now(),
+        userID: user[i].id,
+      });
+    }
+  }
+
+  test('returns 200 ok when there are no jokes in database', async () => {
+    const response = await getJokes();
+    expect(response.status).toBe(200);
+  });
+
+  test('returns page object as response body', async () => {
+    const response = await getJokes();
+    expect(response.body).toEqual(responseJokePaginationBlank);
+  });
+
+  test('returns 10 jokes in page content when there are 11 jokes in the database', async () => {
+    await addJokes(11);
+    const response = await getJokes();
+    expect(response.body.content.length).toBe(10);
+  });
+
+  test('returns id, content, timestamp, & user object (id, username, email, image) in the content', async () => {
+    await addJokes(10);
+
+    const response = await getJokes();
+    const joke = response.body.content[0];
+    const jokeKeys = Object.keys(joke);
+    const userKeys = Object.keys(joke.user);
+    
+    expect(jokeKeys).toEqual(['id', 'content', 'timestamp', 'user']);
+    expect(userKeys).toEqual(['id', 'username', 'email', 'image']);
+  });
+
+  test('returns 2 as totalPages when there are 11 Jokes', async () => {
+    await addJokes(11);
+    const response = await getJokes();
+    expect(response.body.totalPages).toBe(2);
+  });
+
+  test('returns 2nd page jokes and page indicator when page is set as 1 in req params', async () => {
+    await addJokes(11);
+    const response = await getJokes(1);
+    expect(response.body.content[0].content).toBe('Content Of Great Jokes all 1');
+    expect(response.body.page).toBe(1);
+  });
+
+  test('returns first page when page is set below Zero as request parameter', async () => {
+    await addJokes(11);
+    const response = await getJokes(-5);
+    expect(response.body.page).toBe(0);
+  });
+
+  test('returns first page when page is set with gibberish "asdf" as request parameter', async () => {
+    await addJokes(11);
+    const response = await request(app).get('/api/1.0/jokes').query({page: 'asdf'});
+    expect(response.body.page).toBe(0);
+  });
+
+  test('returns 5 jokes and corresponding size indicator when size is set as 5 in req param', async () => {
+    await addJokes(11);
+    const response = await getJokeWithSize(5);
+    expect(response.body.content.length).toBe(5);
+    expect(response.body.size).toBe(5);
+  });
+
+  test('returns 10 jokes and corresponding size indicator when size is set as 1000 in req param', async () => {
+    await addJokes(11);
+    const response = await getJokeWithSize(1000);
+    expect(response.body.content.length).toBe(10);
+    expect(response.body.size).toBe(10);
+  });
+
+  test('returns 10 jokes and corresponding size indicator when size is set as 0 in req param', async () => {
+    await addJokes(11);
+    const response = await getJokeWithSize(0);
+    expect(response.body.content.length).toBe(10);
+    expect(response.body.size).toBe(10);
+  });
+
+  test('returns page as zero and size as 10 when non number query params provided', async () => {
+    await addJokes(11);
+    const response = await request(app).get('/api/1.0/jokes').query({page: 'asdf', size: 'asdf'});
+    expect(response.body.size).toBe(10);
+    expect(response.body.page).toBe(0);
+  });
+
+  test('returns jokes to be ordered from new to old', async() => {
+    await addJokes(11);
+    const response = await getJokes();
+    const firstHoax = response.body.content[0];
+    const lastHoax = response.body.content[9];
+    expect(firstHoax.timestamp).toBeGreaterThan(lastHoax.timestamp);
+  });
+
+});
+```
+
+Great now the implementation:
+- `Joke.controller.ts`:
+  ```
+  /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
+  import { post, get, use, routerConfig } from '../../decorators'; 
+  import { JokeHelperController } from './joke.helper.controller';
+  import { checkAuthMWForJokeRoutes,
+    jokePostSchema,
+    validationErrorGenerator,
+    bodyValidatorMW,
+    paginationMW
+  } from '../../utils';
+
+  const validationOption = {abortEarly: false};
+
+  @routerConfig('/api/1.0/jokes')
+  class JokesController {
+    @post('/', JokeHelperController.httpJokePost)
+    @use(bodyValidatorMW(jokePostSchema, validationErrorGenerator, validationOption))
+    @use(checkAuthMWForJokeRoutes)
+    jokesPost(): void{}
+
+    @get('/', JokeHelperController.httpGetJokes)
+    @use(paginationMW)
+    jokesGet(): void{}
+  }
+  ```
+  As you can see here I'm adding a middleware `paginationMW` to ensure that we will have pagination properties in the `req`
+- `joke.helper.controller.ts`:
+    ```
+    public static async httpGetJokes(
+      req: RequestWithPagination & RequestWithAuthenticatedUser,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> {
+      try {
+        if (!req.pagination) {
+          throw new Error('Pagination is not set properly');
+        }
+
+        const { page, size } = req.pagination;
+        const jokes = await JokeHelperModel.getAllJokes(page, size);
+
+        res.status(200).send(jokes);
+        return;
+      } catch (err) {
+        next(err);
+        return;
+      }
+    }
+  }
+  ```
+  As you can see here, that we copy the previous implementation in the user listing. Nothing much changes.
+
+- `Joke.helper.models.ts`
+  ```
+  public static async getAllJokes(
+    page: number, 
+    size: number, 
+  ): Promise<JokePaginationResponseTypes>{
+
+    const jokeList = await Joke.findAndCountAll({
+      attributes: ['id', 'content', 'timestamp'],
+      include: {
+        model: User,
+        as: 'user',
+        attributes: ['id', 'username', 'email', 'image']
+      },
+      order: [['id', 'DESC']],
+      limit: size,
+      offset: page * size,
+    });
+
+    const totalPages = JokeHelperModel.getPageCount( jokeList.count, size);
+
+    return JokeHelperModel.generateResUserPagination(jokeList.rows as unknown as JokeContentResponseTypes[], totalPages, page, size);
+  }
+
+  
+  public static getPageCount(userCount: number, size: number): number {
+    return Math.ceil(userCount / size);
+  }
+
+  public static generateResUserPagination(
+    jokeList: JokeContentResponseTypes[], 
+    totalPages: number, 
+    page: number,
+    size: number
+  ): JokePaginationResponseTypes {
+    return {
+      content: jokeList,
+      page,
+      size,
+      totalPages,
+    };
+  }
+  ```
+  As you can see here that we're changing it a little bit particularly for the data that we return back and also we add the order to sort the jokes from the newest to the latest. 
+
+Remember in the user model, we have to create something like this: 
+
+```
+Joke.belongsTo(User, {
+  foreignKey: 'userID'
+});
+```
+
 ## Listing Jokes of a User
+
+
 
 ## Running Test with Postgres
 
