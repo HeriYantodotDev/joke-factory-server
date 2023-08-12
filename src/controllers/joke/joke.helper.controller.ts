@@ -5,7 +5,8 @@ import { UserWithIDOnlyNumber,
   RequestWithPagination,
   JokeHelperModel,
   SuccessResponse,
-  UserHelperModel
+  UserHelperModel,
+  AttachmentHelperModel
 } from '../../models';
 import { ErrorUserNotFound } from '../../utils';
 
@@ -78,5 +79,14 @@ export class JokeHelperController {
       next(err);
       return;
     }
+  }
+
+  public static async httpJokeAttachmentPost(
+    req: RequestWithAuthenticatedUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    await AttachmentHelperModel.createAttachment();
+    res.send();
   }
 }

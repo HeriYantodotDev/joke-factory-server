@@ -20,6 +20,9 @@ class JokesController {
   @get('/', JokeHelperController.httpGetJokes)
   @use(paginationMW)
   jokesGet(): void{}
+
+  @post('/attachments', JokeHelperController.httpJokeAttachmentPost )
+  jokesAttachmentPost(): void{}
 }
 
 @routerConfig('/api/1.0/users/:userID/jokes')
