@@ -171,20 +171,20 @@
                 ? arguments[1]
                 : 0,
             a = e
-              ? '/api/1.0/users/'.concat(e, '/hoaxes?page=')
+              ? '/api/1.0/users/'.concat(e, '/jokes?page=')
               : '/api/1.0/jokes?page=';
           return g.a.get(a + t);
         },
         k = function (e, t) {
           var a = t
-            ? '/api/1.0/users/'.concat(t, '/hoaxes/').concat(e)
+            ? '/api/1.0/users/'.concat(t, '/jokes/').concat(e)
             : '/api/1.0/jokes/'.concat(e);
           return g.a.get(a);
         },
         C = function (e, t) {
           var a = t
             ? '/api/1.0/users/'
-                .concat(t, '/hoaxes/')
+                .concat(t, '/jokes/')
                 .concat(e, '?direction=after')
             : '/api/1.0/jokes/'.concat(e, '?direction=after');
           return g.a.get(a);
@@ -1361,7 +1361,7 @@
             b = Object(f.b)().t,
             v = Object(ee.h)().userid,
             g = v
-              ? '/api/1.0/users/'.concat(v, '/hoaxes?page=')
+              ? '/api/1.0/users/'.concat(v, '/jokes?page=')
               : '/api/1.0/jokes?page=',
             h = E('get', g),
             O = 0,
@@ -1372,12 +1372,12 @@
             O = a.content[x].id;
           }
           var N = v
-              ? '/api/1.0/users/'.concat(v, '/hoaxes/').concat(O)
+              ? '/api/1.0/users/'.concat(v, '/jokes/').concat(O)
               : '/api/1.0/jokes/'.concat(O),
             w = E('get', N, !0),
             S = v
               ? '/api/1.0/users/'
-                  .concat(v, '/hoaxes/')
+                  .concat(v, '/jokes/')
                   .concat(j, '?direction=after')
               : '/api/1.0/jokes/'.concat(j, '?direction=after'),
             L = E('get', S, !0);
@@ -1501,7 +1501,7 @@
             ? r.a.createElement(
                 'div',
                 { className: 'alert alert-secondary text-center' },
-                h ? r.a.createElement(H, null) : b('There are no hoaxes')
+                h ? r.a.createElement(H, null) : b('There are no jokes')
               )
             : r.a.createElement(
                 'div',
@@ -1514,7 +1514,7 @@
                       style: { cursor: L ? 'not-allowed' : 'pointer' },
                       onClick: L ? function () {} : P,
                     },
-                    L ? r.a.createElement(H, null) : b('There are new hoaxes')
+                    L ? r.a.createElement(H, null) : b('There are new jokes')
                   ),
                 D.map(function (e) {
                   return r.a.createElement(Z, {
@@ -1531,7 +1531,7 @@
                       style: { cursor: w ? 'not-allowed' : 'pointer' },
                       onClick: w ? function () {} : A,
                     },
-                    w ? r.a.createElement(H, null) : b('Load old hoaxes')
+                    w ? r.a.createElement(H, null) : b('Load old jokes')
                   )
               );
         },
