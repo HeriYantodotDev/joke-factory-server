@@ -8,6 +8,7 @@ const uploadDir = process.env.uploadDir;
 
 const profileDir = 'profile';
 
+const attachmentDir = 'attachment';
 
 if (!uploadDir) {
   throw new Error('Please set up the uploadDir environment');
@@ -25,5 +26,11 @@ describe('createFolders' , () => {
     FileUtils.createFolders();
     const profileFolder = path.join('.', uploadDir, profileDir);
     expect(fs.existsSync(profileFolder)).toBe(true);
+  });
+  
+  test('creates attachment folders under upload folder', () => {
+    FileUtils.createFolders();
+    const attachmentFolder = path.join('.', uploadDir, attachmentDir);
+    expect(fs.existsSync(attachmentFolder)).toBe(true);
   });
 });

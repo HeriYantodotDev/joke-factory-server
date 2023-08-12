@@ -11,7 +11,10 @@ if (!process.env.uploadDir) {
 
 const uploadDir = process.env.uploadDir;
 const profileDir = 'profile';
+const attachmentDir = 'attachment';
+
 const profileFolder = path.join('.', uploadDir, profileDir);
+const attachmentFolder = path.join('.', uploadDir, attachmentDir);
 
 export class FileUtils {
   public static createFolders() {
@@ -21,6 +24,10 @@ export class FileUtils {
 
     if (!fs.existsSync(profileFolder)) {
       fs.mkdirSync(profileFolder);
+    }
+
+    if (!fs.existsSync(attachmentFolder)) {
+      fs.mkdirSync(attachmentFolder);
     }
   }
 
