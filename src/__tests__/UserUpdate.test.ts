@@ -9,6 +9,7 @@ import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 import fs from 'fs';
 import path from 'path';
+import { FileUtils } from '../utils';
 const emailUser1 = 'user1@gmail.com';
 const passwordUser1 = 'A4GuaN@SmZ';
 const randomPassword = 'JuJ*733H_SDsd@!';
@@ -297,6 +298,45 @@ describe('User Update', () => {
 
     expect(fs.existsSync(profileImagePath)).toBe(false);
     
+  });
+
+  test('saves the new image without error if the previous image was somehow gone or deleted', async () => {
+    const fileInBase64 = readFileAsBase64();
+
+    const userList = await UserHelperModel.addMultipleNewUsers(1, 0);
+    
+    const validUpdate = { 
+      username: 'user1-updated',
+      image: fileInBase64,
+    };
+    
+    const response = await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    const firstImage = response.body.image;
+
+    await FileUtils.deleteProfileImage(firstImage);
+
+    const response2 = await putUser(
+      userList[0].id, 
+      validUpdate, 
+      {auth : { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }}
+    );
+
+    const newImage = response2.body.image;
+
+    const profileImagePath = path.join(profileDirectory, newImage );
+
+    expect(fs.existsSync(profileImagePath)).toBe(true);
   });
 
   test.each`

@@ -14,6 +14,7 @@ import { ErrorUserNotFound } from '../../utils/Errors';
 import { Op, WhereOptions, InferAttributes } from 'sequelize';
 import { AuthHelperModel } from '../auth';
 import { FileUtils } from '../../utils/file/File.util';
+import { logger } from '../../utils';
 
 export class UserHelperModel {
   public static async createUser(newUser: NewUser): Promise<UserDataFromDB> {
@@ -204,8 +205,12 @@ export class UserHelperModel {
     }
 
     if (body.image) {
-      if (user.image) {
-        await FileUtils.deleteProfileImage(user.image);
+      try {
+        if (user.image) {
+          await FileUtils.deleteProfileImage(user.image);
+        }
+      } catch(err) {
+        logger.warn('Previous image was gone!');
       }
 
       const fileName = await FileUtils.saveProfileImage(body.image);
