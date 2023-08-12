@@ -24,15 +24,24 @@ export class JokeHelperModel {
 
   public static async getAllJokes(
     page: number, 
-    size: number, 
+    size: number,
+    userID: number | null = null,
   ): Promise<JokePaginationResponseTypes>{
 
+    let whereClause = {};
+    if (userID) {
+      whereClause = {
+        userID
+      }
+    }
+
     const jokeList = await Joke.findAndCountAll({
+      where: whereClause,
       attributes: ['id', 'content', 'timestamp'],
       include: {
         model: User,
         as: 'user',
-        attributes: ['id', 'username', 'email', 'image']
+        attributes: ['id', 'username', 'email', 'image'],
       },
       order: [['id', 'DESC']],
       limit: size,
