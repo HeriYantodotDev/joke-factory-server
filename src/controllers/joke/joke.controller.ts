@@ -21,3 +21,10 @@ class JokesController {
   @use(paginationMW)
   jokesGet(): void{}
 }
+
+@routerConfig('/api/1.0/users/:userID/jokes')
+class JokeController {
+  @get('/', JokeHelperController.httpGetUserJokes)
+  @use(paginationMW)
+  jokeGet():void{}
+}

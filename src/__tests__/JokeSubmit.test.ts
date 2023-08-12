@@ -119,8 +119,8 @@ describe('Post Joke', () => {
     const jokes = await Joke.findAll();
     const savedJoke = jokes[0];
     expect(savedJoke.content).toBe(content);
-    expect(Number(savedJoke.timestamp)).toBeGreaterThan(beforeSubmit);
-    expect(Number(savedJoke.timestamp)).toBeLessThan(Date.now());
+    expect(savedJoke.timestamp).toBeGreaterThan(beforeSubmit);
+    expect(savedJoke.timestamp).toBeLessThan(Date.now());
   });
 
   test.each`

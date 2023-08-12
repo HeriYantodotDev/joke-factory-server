@@ -1023,9 +1023,284 @@ Joke.belongsTo(User, {
 
 ## Listing Jokes of a User
 
+Now let's add a feature to list jokes from a user. 
 
+The test is quite similar like this : 
+
+```
+describe('Listing Jokes of a user', () => {
+  async function getJokes(id: number, option:option = {} ) {
+    const agent = request(app).get(`/api/1.0/users/${id}/jokes`);
+    if (option.language) {
+      agent.set('Accept-Language', option.language);
+    }
+
+    if (option.page) {
+      agent.query({page: option.page});
+    }
+
+    if (option.size) {
+      agent.query({size: option.size});
+    }
+    return agent;
+  }
+
+  async function addJokes(count: number, id: number) {
+    for (let i=0; i < count; i++) {
+      await Joke.create({
+        content: `Content Of Great Jokes all ${i+1}`,
+        timestamp: Date.now(),
+        userID: id,
+      });
+    }
+  }
+
+  test('returns 200 ok when there are no jokes in database', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const response = await getJokes(user[0].id);
+    expect(response.status).toBe(200);
+  });
+
+  test('returns 404 when user does not exist', async() => {
+    const response = await getJokes(4);
+    expect(response.status).toBe(404);
+  });
+
+  test.each`
+  lang        | message
+  ${'en'}     | ${en.userNotFound}
+  ${'id'}     | ${id.userNotFound}
+  `('returns error object with $message for unknown user when language is $lang', async ({lang, message}) => {
+    const id = 4;
+    const nowInMS = Date.now();
+    const response = await getJokes(id, {language: lang});
+    const error = response.body;
+    expect(error.message).toBe(message);
+    expect(error.path).toBe(`/api/1.0/users/${id}/jokes`);
+    expect(error.timeStamp).toBeGreaterThan(nowInMS);
+  }); 
+
+  test('returns page object as response body', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const response = await getJokes(user[0].id);
+    expect(response.body).toEqual(responseJokePaginationBlank);
+  });
+
+  test('returns 10 jokes in page content when there are 11 jokes in the database', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await getJokes(userId);
+    expect(response.body.content.length).toBe(10);
+  });
+
+  test('returns 5 jokes belong to user in page content where there are total 11 jokes', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(2,0);
+    const userId = user[0].id;
+    await addJokes(5, userId);
+    await addJokes(6,user[1].id);
+    const response = await getJokes(userId);
+    expect(response.body.content.length).toBe(5);
+
+  });
+
+  test('returns id, content, timestamp, & user object (id, username, email, image) in the content', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+
+    const response = await getJokes(userId);
+    const joke = response.body.content[0];
+    const jokeKeys = Object.keys(joke);
+    const userKeys = Object.keys(joke.user);
+    
+    expect(jokeKeys).toEqual(['id', 'content', 'timestamp', 'user']);
+    expect(userKeys).toEqual(['id', 'username', 'email', 'image']);
+  });
+
+  test('returns 2 as totalPages when there are 11 Jokes', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await getJokes(userId);
+    expect(response.body.totalPages).toBe(2);
+  });
+
+  test('returns 2nd page jokes and page indicator when page is set as 1 in req params', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await getJokes(userId, {page: 1});
+    expect(response.body.content[0].content).toBe('Content Of Great Jokes all 1');
+    expect(response.body.page).toBe(1);
+  });
+
+  test('returns first page when page is set below Zero as request parameter', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await getJokes(userId, {page: -5});
+    expect(response.body.page).toBe(0);
+  });
+
+  test('returns first page when page is set with gibberish "asdf" as request parameter', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await request(app).get(`/api/1.0/users/${userId}/jokes`).query({page: 'asdf'});
+    expect(response.body.page).toBe(0);
+  });
+
+  test('returns 5 jokes and corresponding size indicator when size is set as 5 in req param', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await getJokes(userId, {size: 5});
+    expect(response.body.content.length).toBe(5);
+    expect(response.body.size).toBe(5);
+  });
+
+  test('returns 10 jokes and corresponding size indicator when size is set as 1000 in req param', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await getJokes(userId, {size: 1000});
+    expect(response.body.content.length).toBe(10);
+    expect(response.body.size).toBe(10);
+  });
+
+  test('returns 10 jokes and corresponding size indicator when size is set as 0 in req param', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await getJokes(userId, {size: 0});
+    expect(response.body.content.length).toBe(10);
+    expect(response.body.size).toBe(10);
+  });
+
+  test('returns page as zero and size as 10 when non number query params provided', async () => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await request(app).get(`/api/1.0/users/${userId}/jokes`).query({page: 'asdf', size: 'asdf'});
+    expect(response.body.size).toBe(10);
+    expect(response.body.page).toBe(0);
+  });
+
+  test('returns jokes to be ordered from new to old', async() => {
+    const user= await UserHelperModel.addMultipleNewUsers(1,0);
+    const userId = user[0].id;
+    await addJokes(11, userId);
+    const response = await getJokes(userId);
+    const firstHoax = response.body.content[0];
+    const lastHoax = response.body.content[9];
+    expect(Number(firstHoax.timestamp)).toBeGreaterThan(Number(lastHoax.timestamp));
+  });
+
+});
+```
+
+Then for the imlementation: 
+`joke.controller.ts`. We're adding a new router here: 
+```
+@routerConfig('/api/1.0/users/:userID/jokes')
+class JokeController {
+  @get('/', JokeHelperController.httpGetUserJokes)
+  @use(paginationMW)
+  jokeGet():void{}
+}
+```
+
+And here's the implementation in the controller: `joke.helper.controller.ts`:
+
+```
+public static async httpGetUserJokes(
+  req: RequestWithPagination & RequestWithAuthenticatedUser,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userID = Number(req.params.userID);
+    const userExist = await UserHelperModel.getActiveUserByID(userID);
+
+    if (!userExist) {
+      throw new ErrorUserNotFound();
+    }
+
+    if (!req.pagination) {
+      throw new Error('Pagination is not set properly');
+    }
+
+    const { page, size } = req.pagination;
+    const jokes = await JokeHelperModel.getAllJokes(page, size, userID);
+
+    res.status(200).send(jokes);
+
+    return;
+
+  } catch (err) {
+    next(err);
+    return;
+  }
+}
+```
+
+Great, now as you can see, it's using the same helper function, we are modifying the helper function to accept the where clause like this: 
+
+```
+public static async getAllJokes(
+  page: number, 
+  size: number,
+  userID: number | null = null,
+): Promise<JokePaginationResponseTypes>{
+
+  let whereClause = {};
+  if (userID) {
+    whereClause = {
+      userID
+    }
+  }
+
+  const jokeList = await Joke.findAndCountAll({
+    where: whereClause,
+    attributes: ['id', 'content', 'timestamp'],
+    include: {
+      model: User,
+      as: 'user',
+      attributes: ['id', 'username', 'email', 'image'],
+    },
+    order: [['id', 'DESC']],
+    limit: size,
+    offset: page * size,
+  });
+
+  const totalPages = JokeHelperModel.getPageCount( jokeList.count, size);
+
+  return JokeHelperModel.generateResUserPagination(jokeList.rows as unknown as JokeContentResponseTypes[], totalPages, page, size);
+}
+```
+
+So, it could work with both routes. If it is called with `userID` parameter, then we're going to add the if clause.
 
 ## Running Test with Postgres
+
+Let's refactor our test, since the behavior between SQLite3 and Postgres is different particularly for the BIGINT we have to specify like this:
+
+```
+import pg from 'pg';
+
+pg.defaults.parseInt8 = true;
+```
+
+in our `database.ts`.
+
+By ensuring this we can ensure that we can receive number format from BIGINT datatype. 
+
+The last thing is when running the test in staging environment. Sometimes it is really slow , therefore we have to add more time for the timeout, by adding this: `--testTimeout=10000` into the npm script when running the test in the staging environment. 
+
+```
+ "test:staging": "npm run clean:compile && NODE_ENV=staging npm run migrate && NODE_ENV=staging jest --testTimeout=10000 --runInBand --watchAll && NODE_ENV=staging npm run clean-up",
+```
 
 ## Deployment
 

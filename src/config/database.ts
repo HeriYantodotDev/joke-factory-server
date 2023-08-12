@@ -3,6 +3,10 @@ dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 
 import { Sequelize } from 'sequelize';
 
+import pg from 'pg';
+
+pg.defaults.parseInt8 = true;
+
 const databaseURL = process.env.databaseURL;
 
 const logging = process.env.logging;
