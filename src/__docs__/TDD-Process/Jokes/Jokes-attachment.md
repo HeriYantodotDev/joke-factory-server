@@ -369,11 +369,269 @@ We already store the related information about attachment like the filename, and
 
   I refactored it so we don't repeat ourselves by creating a function to clean up the folder. 
   
-
-
 ## Serving Attachment Folder
 
+We already save our file in our local files, now let's use it as a static file now. 
+Now let's add test to `ServingStaticResources.test.ts`. I had to tweak it a little bit so we don't repeat ourselves: 
+
+```
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+import fs from 'fs';
+import path from 'path';
+import request from 'supertest';
+import { app } from '../app';
+
+const uploadDir = process.env.uploadDir;
+
+const attachmentDir = 'attachment';
+const profileDir = 'profile';
+
+if (!uploadDir) {
+  throw new Error('Please set up the uploadDir environment');
+}
+
+const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+const storedFileName = 'test-file';
+const storedAttachmentName = 'test-attachment-file';
+
+const profileDirectory = path.join('.', uploadDir, profileDir);
+const attachmentDirectory = path.join('.', uploadDir, attachmentDir);
+
+const imageProfilePath = path.join(profileDirectory, storedFileName);
+const imageProfileApiUrl = `/images/${storedFileName}`;
+
+const attachmentPath = path.join(attachmentDirectory, storedAttachmentName);
+const attachmentApiUrl = `/attachments/${storedAttachmentName}`;
+
+async function copyFileAndSendRequest(targetPath = imageProfilePath, apiUrl = imageProfileApiUrl ) {
+  fs.copyFileSync(filePath, targetPath);
+  const response = await request(app).get(apiUrl);
+  return response;
+}
+
+
+describe('Profile Images', () => {
+  test('returns 404 when file not found', async() => {
+    const response = await request(app).get('/images/123456');
+    expect(response.status).toBe(404);
+  });
+
+  test('returns 200 when file exists', async() => {
+    const response = await copyFileAndSendRequest();
+    expect(response.status).toBe(200);
+  });
+
+  test('returns cached for 1 year in response', async() => {
+    const response = await copyFileAndSendRequest();
+    const oneYearInSeconds = 365 * 24 * 60 * 60;
+    expect(response.header['cache-control']).toContain(`max-age=${oneYearInSeconds}`);
+  });
+});
+
+describe('Joke Attachments', () => {
+  test('returns 404 when file not found', async() => {
+    const response = await request(app).get('/attachments/123456');
+    expect(response.status).toBe(404);
+  });
+
+  test('returns 200 when file exists', async() => {
+    const response = await copyFileAndSendRequest(attachmentPath, attachmentApiUrl);
+    expect(response.status).toBe(200);
+  });
+
+  test('returns cached for 1 year in response', async() => {
+    const response = await copyFileAndSendRequest(attachmentPath, attachmentApiUrl);
+    const oneYearInSeconds = 365 * 24 * 60 * 60;
+    expect(response.header['cache-control']).toContain(`max-age=${oneYearInSeconds}`);
+  });
+});
+```
+
+Now for the Implementation we only need to add it into our `configStaticFiles`:
+```
+private static configStaticFiles(): void {
+  if (!process.env.uploadDir) {
+    throw new Error('Please set up the uploadDir environment');
+  }
+  
+  const uploadDir = process.env.uploadDir;
+  const profileDir = 'profile';
+  const attachmentDir = 'attachment';
+  const profileFolder = path.join('.', uploadDir, profileDir);
+  const attachmentFolder = path.join('.', uploadDir, attachmentDir);
+
+  app.use('/images', express.static(profileFolder, {maxAge: ONE_YEAR_IN_MS}));
+  app.use('/attachments', express.static(attachmentFolder, {maxAge: ONE_YEAR_IN_MS}));
+}
+```
+
 ## Storing File Type
+
+Let's enhance our attachment feature. User can attach anything, there's not restriction for it, however it will be beneficial if we store the file type. 
+
+However, due to problem with `file-type` with JEST. I decided to create my own function, this is not a good solution though, however, it's okay for this simple app. I'm thinking that it is better if we limit the file type that user can upload, but let's do it later. 
+
+So here's my function to identify file type named: `identifyFileType.ts`: 
+
+```
+//I have a problem with file-type package, therefore I created this simple one 
+interface fileSignatures {
+  [key: string]: string,
+}
+
+export interface IdentifyFileTypeResponse {
+  fileType: string,
+  fileExt: string | null,
+}
+
+const fileSignatures:fileSignatures = {
+  '89504E47': 'image/png',
+  'FFD8FF': 'image/jpg',
+  '47494638': 'image/gif',
+  '25504446': 'application/pdf',
+  '504B0304': 'application/zip',
+  '52617221': 'application/x-rar-compressed',
+  '424D': 'image/bmp',
+  '3C3F786D6C': 'application/xml',
+  '504B030414': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '504B030414000600': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '504B030414000208': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '377ABCAF271C': 'application/x-7z-compressed',
+  'D0CF11E0A1B11AE1': 'application/msword',
+  '504B0708': 'application/java-archive',
+  '7573746172': 'application/x-tar',
+  '1F8B08': 'application/gzip',
+  '4D5A': 'application/x-msdownload',
+  '57415645': 'audio/wav',
+  '464C56': 'video/x-flv',
+  '464F524D': 'audio/midi',
+  // Add more signatures and types as needed
+};
+
+const mimeTypeMapping: fileSignatures = {
+  'image/png': 'png',
+  'image/jpg': 'jpg',
+  'image/gif': 'gif',
+  'application/pdf': 'pdf',
+  'application/zip': 'zip',
+  'application/x-rar-compressed': 'rar',
+  'image/bmp': 'bmp',
+  'application/xml': 'xml',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+  'application/x-7z-compressed': '7z',
+  'application/msword': 'doc',
+  'application/java-archive': 'jar',
+  'application/x-tar': 'tar',
+  'application/gzip': 'gzip',
+  'application/x-msdownload': 'msdownload',
+  'audio/wav': 'wav',
+  'video/x-flv': 'flv',
+  'audio/midi': 'midi',
+  // Add more mappings as needed
+};
+
+export function identifyFileType(buffer: Buffer): IdentifyFileTypeResponse {
+  const subBuffer = buffer.subarray(0, 8);
+  const signature = subBuffer.toString('hex').toUpperCase();
+
+  const key = Object.keys(fileSignatures).find(magicNumber => signature.startsWith(magicNumber));
+
+  if (!key) {
+    return {
+      fileType: 'UNKNOWN',
+      fileExt: null,
+    };
+  }
+
+  return {
+    fileType: fileSignatures[key],
+    fileExt: mimeTypeMapping[fileSignatures[key]],
+  };
+}
+```
+
+I only listed 20 common file types, and for the rest I will just list it as unknown. 
+
+Great now let's add the test: 
+
+```
+test.each`
+file                | fileType
+${'test-png.png'}   | ${'image/png'}
+${'test-png'}       | ${'image/png'}
+${'test-gif.gif'}   | ${'image/gif'}
+${'test-jpg.jpg'}   | ${'image/jpg'}
+${'test-pdf.pdf'}   | ${'application/pdf'}
+${'test-txt.txt'}   | ${'UNKNOWN'}
+`('saves filetype as $fileType when this file $file is uploaded', async({file, fileType}) => {
+  await uploadFile(file);
+
+  const attachments = await Attachment.findAll();
+  const attachment = attachments[0];
+  expect(attachment.fileType).toBe(fileType);
+});
+
+test.only.each`
+file                | fileExtension
+${'test-png.png'}   | ${'png'}
+${'test-png'}       | ${'png'}
+${'test-gif.gif'}   | ${'gif'}
+${'test-jpg.jpg'}   | ${'jpg'}
+${'test-pdf.pdf'}   | ${'pdf'}
+${'test-txt.txt'}   | ${'txt'}
+`('saves filename with $fileExtension when this file $file is uploaded', async({file, fileExtension}) => {
+  await uploadFile(file);
+
+  const attachments = await Attachment.findAll();
+  const attachment = attachments[0];
+
+  const expectedResult = file === 'test-txt.txt'? false: true;
+
+  expect(attachment.filename.endsWith(fileExtension)).toBe(expectedResult);
+
+  const filePath = path.join(attachmentFolder, attachment.filename );
+  expect(fs.existsSync(filePath)).toBe(true);
+});
+```
+
+Now here's the implementation : 
+
+`Attachment.helper.model.ts`: 
+
+```
+export class AttachmentHelperModel {
+  public static async createAttachment(
+    file: Express.Multer.File
+  ) {
+    const fileIdentification = identifyFileType(file.buffer);
+    const filename = await FileUtils.saveAttachment(file, fileIdentification);
+    await Attachment.create({
+      filename,
+      fileType: fileIdentification.fileType,
+      uploadDate: new Date(),
+    });
+  }
+}
+```
+
+And here's the implementation in the `File.util.ts`: 
+
+```
+public static async saveAttachment(file: Express.Multer.File, fileIdentification: IdentifyFileTypeResponse){
+  const randomString = AuthHelperModel.randomString(32);
+  const filename = fileIdentification.fileExt
+    ? `${randomString}.${fileIdentification.fileExt}`
+    : `${randomString}`;
+  const attachmentPath = path.join(attachmentFolder, filename);
+  await fs.promises.writeFile(attachmentPath, file.buffer);
+  return filename;
+}
+```
+
+
 
 ## File Size Limit
 

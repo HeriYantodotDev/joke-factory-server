@@ -16,6 +16,7 @@ export class Attachment extends Model<
   declare id: CreationOptional<number>;
   declare filename: string;
   declare uploadDate: Date;
+  declare fileType: string;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -29,6 +30,7 @@ Attachment.init(
     },
     filename: DataTypes.STRING,
     uploadDate: DataTypes.DATE,
+    fileType: DataTypes.STRING,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },

@@ -5,6 +5,8 @@ import path from 'path';
 
 import { AuthHelperModel } from '../../models';
 
+import { IdentifyFileTypeResponse } from './identifyFileType';
+
 if (!process.env.uploadDir) {
   throw new Error('Please set up the uploadDir environment');
 }
@@ -46,14 +48,13 @@ export class FileUtils {
     await fs.promises.unlink(filePath);
   }
 
-  public static async saveAttachment(file: Express.Multer.File){
-    const filename = AuthHelperModel.randomString(32);
-
+  public static async saveAttachment(file: Express.Multer.File, fileIdentification: IdentifyFileTypeResponse){
+    const randomString = AuthHelperModel.randomString(32);
+    const filename = fileIdentification.fileExt
+      ? `${randomString}.${fileIdentification.fileExt}`
+      : `${randomString}`;
     const attachmentPath = path.join(attachmentFolder, filename);
-
     await fs.promises.writeFile(attachmentPath, file.buffer);
-
     return filename;
   }
-
 }
