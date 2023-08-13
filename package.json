@@ -1,6 +1,6 @@
 {
   "name": "joke-factory",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "joke-factory app. A portfolio project for practicing TDD, TypeScript, and Express",
   "main": "./dist/index.js",
   "scripts": {
