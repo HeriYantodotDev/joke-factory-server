@@ -1,6 +1,6 @@
 {
   "name": "joke-factory",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "joke-factory app. A portfolio project for practicing TDD, TypeScript, and Express",
   "main": "./dist/index.js",
   "scripts": {
@@ -31,6 +31,7 @@
     "@types/express-session": "^1.17.7",
     "@types/jest": "^29.5.0",
     "@types/jsonwebtoken": "^9.0.2",
+    "@types/multer": "^1.4.7",
     "@types/node": "^18.15.11",
     "@types/nodemailer": "^6.4.9",
     "@types/passport": "^1.0.12",
@@ -62,6 +63,7 @@
     "i18next-http-middleware": "^3.3.2",
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.1",
+    "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.4",
     "npm": "^9.8.1",
     "passport": "^0.6.0",

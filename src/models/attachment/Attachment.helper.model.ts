@@ -1,13 +1,15 @@
 import { Attachment } from './Attachment.model';
-import { AuthHelperModel } from '../auth';
+import { FileUtils } from '../../utils';
 
 export class AttachmentHelperModel {
   public static async createAttachment(
-
+    file: Express.Multer.File
   ) {
+    const filename = await FileUtils.saveAttachment(file);
+
     await Attachment.create({
-      filename: AuthHelperModel.randomString(10),
+      filename,
       uploadDate: new Date(),
-    })
+    });
   }
 }

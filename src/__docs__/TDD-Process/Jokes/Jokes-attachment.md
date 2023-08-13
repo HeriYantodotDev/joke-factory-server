@@ -237,8 +237,139 @@ Now, let's move to the next step. We're going to use database now, therefore let
 
 Okay, now we're passing the test, let's move to store the attachment file. 
 
-
 ## Storing Attachment File
+
+We already store the related information about attachment like the filename, and also the timeStamp, however, we haven't stored the file yet. Let's begin to create the functionality for it. 
+
+- Test: 
+  ```
+  it('saves file to attachment folder', async() => {
+    await uploadFile();
+
+    const attachments = await Attachment.findAll();
+    const attachment = attachments[0];
+
+    const filePath = path.join(attachmentFolder, attachment.filename);
+
+    expect(fs.existsSync(filePath)).toBe(true);
+  });
+  ```
+  For the test, we have to get the environment variable to create a path. 
+
+- Implementation: 
+  We're going to use this library: [`Multer`](https://www.npmjs.com/package/multer). 
+
+  After install it now let's add it as a middleware in our controller: 
+  ```
+  import multer from 'multer';
+  const attachmentName = 'file';
+  const upload = multer();
+  const uploadMW = upload.single(attachmentName);
+
+  @post('/attachments', JokeHelperController.httpJokeAttachmentPost )
+  @use(uploadMW)
+  jokesAttachmentPost(): void{}
+  ```
+
+  Now in the controller helper, we are calling the same function, however this time we have `req.file` since the previous middleware adds it, so we have to change the type for the `req` like this: 
+
+  ```
+  public static async httpJokeAttachmentPost(
+    req: RequestWithAuthenticatedUser & RequestWithFile,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    if (!req.file) {
+      throw new Error('Something wrong with the Multer Module, please check it');
+    }
+
+    await AttachmentHelperModel.createAttachment(req.file);
+    res.send();
+  }
+  ```
+
+  Great! Now, let's modify it our helper function: 
+
+  ```
+  public static async httpJokeAttachmentPost(
+    req: RequestWithAuthenticatedUser & RequestWithFile,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    if (!req.file) {
+      throw new Error('Something wrong with the Multer Module, please check it');
+    }
+
+    await AttachmentHelperModel.createAttachment(req.file);
+    res.send();
+  }
+  ```
+
+  Okay, we haven't handled the error for this, but let's do it later. Now in the model helper before we're saving information to the database, we're calling function from `FileUtils` to save it locally: 
+
+  ```
+  public static async createAttachment(
+    file: Express.Multer.File
+  ) {
+    const filename = await FileUtils.saveAttachment(file);
+
+    await Attachment.create({
+      filename,
+      uploadDate: new Date(),
+    });
+  }
+  ```
+
+  Now finally in the `FileUtils`: 
+
+  ```
+  public static async saveAttachment(file: Express.Multer.File){
+    const filename = AuthHelperModel.randomString(32);
+
+    const attachmentPath = path.join(attachmentFolder, filename);
+
+    await fs.promises.writeFile(attachmentPath, file.buffer);
+
+    return filename;
+  }
+  ```
+
+  We're saving te file locally, and return the filename to be stored in the database. Now for the final touch for our test is to do the clean up: 
+
+  ```
+  import dotenv from 'dotenv';
+  dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+  import fs from 'fs';
+  import path from 'path';
+
+  const uploadDir = process.env.uploadDir;
+
+  const profileDir = 'profile';
+
+  const attachmentDir = 'attachment';
+
+  if (!uploadDir) {
+    throw new Error('Please set up the uploadDir environment');
+  }
+
+  const profileDirectory = path.join('.', uploadDir, profileDir);
+  const attachmentDirectory = path.join('.', uploadDir, attachmentDir);
+
+  function clearFolders(folderPath: string) {
+    const files = fs.readdirSync(folderPath);
+
+    for (const file of files) {
+      fs.unlinkSync(path.join(folderPath, file));
+    }
+  }
+
+  clearFolders(profileDirectory);
+  clearFolders(attachmentDirectory);
+  ```
+
+  I refactored it so we don't repeat ourselves by creating a function to clean up the folder. 
+  
+
 
 ## Serving Attachment Folder
 
