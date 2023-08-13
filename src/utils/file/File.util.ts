@@ -46,4 +46,14 @@ export class FileUtils {
     await fs.promises.unlink(filePath);
   }
 
+  public static async saveAttachment(file: Express.Multer.File){
+    const filename = AuthHelperModel.randomString(32);
+
+    const attachmentPath = path.join(attachmentFolder, filename);
+
+    await fs.promises.writeFile(attachmentPath, file.buffer);
+
+    return filename;
+  }
+
 }

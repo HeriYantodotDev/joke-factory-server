@@ -1,10 +1,22 @@
+import dotenv from 'dotenv';
+dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import request from 'supertest';
 import path = require('path');
 import { sequelize } from '../config/database';
+import fs from 'fs';
 import { app } from '../app';
 import { Attachment } from '../models';
 
 const filePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+
+if (!process.env.uploadDir) {
+  throw new Error('Please set up the uploadDir environment');
+}
+
+const uploadDir = process.env.uploadDir;
+const attachmentDir = 'attachment';
+
+const attachmentFolder = path.join('.', uploadDir, attachmentDir);
 
 async function uploadFile() {
   const response = await request(app)
@@ -42,6 +54,16 @@ describe('Upload File for Joke', () => {
     expect(attachments.length).toBe(1);
     expect(attachment.filename).not.toBe('test-png.png');
     expect(attachment.updatedAt.getTime()).toBeGreaterThan(beforeSubmit);
-    
+  });
+
+  it('saves file to attachment folder', async() => {
+    await uploadFile();
+
+    const attachments = await Attachment.findAll();
+    const attachment = attachments[0];
+
+    const filePath = path.join(attachmentFolder, attachment.filename);
+
+    expect(fs.existsSync(filePath)).toBe(true);
   });
 });

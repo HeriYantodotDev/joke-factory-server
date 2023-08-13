@@ -7,15 +7,22 @@ const uploadDir = process.env.uploadDir;
 
 const profileDir = 'profile';
 
+const attachmentDir = 'attachment';
+
 if (!uploadDir) {
   throw new Error('Please set up the uploadDir environment');
 }
 
 const profileDirectory = path.join('.', uploadDir, profileDir);
+const attachmentDirectory = path.join('.', uploadDir, attachmentDir);
 
+function clearFolders(folderPath: string) {
+  const files = fs.readdirSync(folderPath);
 
-const files = fs.readdirSync(profileDirectory);
-
-for (const file of files){
-  fs.unlinkSync(path.join(profileDirectory, file));
+  for (const file of files) {
+    fs.unlinkSync(path.join(folderPath, file));
+  }
 }
+
+clearFolders(profileDirectory);
+clearFolders(attachmentDirectory);

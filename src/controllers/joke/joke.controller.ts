@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
 import { post, get, use, routerConfig } from '../../decorators'; 
+import multer from 'multer';
 import { JokeHelperController } from './joke.helper.controller';
 import { checkAuthMWForJokeRoutes,
   jokePostSchema,
@@ -7,6 +8,10 @@ import { checkAuthMWForJokeRoutes,
   bodyValidatorMW,
   paginationMW
 } from '../../utils';
+
+const attachmentName = 'file';
+const upload = multer();
+const uploadMW = upload.single(attachmentName);
 
 const validationOption = {abortEarly: false};
 
@@ -22,6 +27,7 @@ class JokesController {
   jokesGet(): void{}
 
   @post('/attachments', JokeHelperController.httpJokeAttachmentPost )
+  @use(uploadMW)
   jokesAttachmentPost(): void{}
 }
 

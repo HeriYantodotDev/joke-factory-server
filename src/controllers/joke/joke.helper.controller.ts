@@ -6,7 +6,8 @@ import { UserWithIDOnlyNumber,
   JokeHelperModel,
   SuccessResponse,
   UserHelperModel,
-  AttachmentHelperModel
+  AttachmentHelperModel,
+  RequestWithFile
 } from '../../models';
 import { ErrorUserNotFound } from '../../utils';
 
@@ -82,11 +83,15 @@ export class JokeHelperController {
   }
 
   public static async httpJokeAttachmentPost(
-    req: RequestWithAuthenticatedUser,
+    req: RequestWithAuthenticatedUser & RequestWithFile,
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    await AttachmentHelperModel.createAttachment();
+    if (!req.file) {
+      throw new Error('Something wrong with the Multer Module, please check it');
+    }
+
+    await AttachmentHelperModel.createAttachment(req.file);
     res.send();
   }
 }
