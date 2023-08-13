@@ -70,9 +70,12 @@ class startupMiddleware {
     
     const uploadDir = process.env.uploadDir;
     const profileDir = 'profile';
+    const attachmentDir = 'attachment';
     const profileFolder = path.join('.', uploadDir, profileDir);
+    const attachmentFolder = path.join('.', uploadDir, attachmentDir);
 
     app.use('/images', express.static(profileFolder, {maxAge: ONE_YEAR_IN_MS}));
+    app.use('/attachments', express.static(attachmentFolder, {maxAge: ONE_YEAR_IN_MS}));
   }
 
   private static configTokenMW(): void {

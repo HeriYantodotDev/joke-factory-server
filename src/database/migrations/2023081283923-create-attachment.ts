@@ -12,6 +12,9 @@ module.exports = {
       filename: {
         type: Sequelize.STRING,
       },
+      fileType: {
+        type: Sequelize.STRING,
+      },
       uploadDate: {
         type: Sequelize.DATE,
       },
