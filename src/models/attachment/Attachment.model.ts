@@ -17,6 +17,7 @@ export class Attachment extends Model<
   declare filename: string;
   declare uploadDate: Date;
   declare fileType: string;
+  declare jokeID: ForeignKey<number | null>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
 }
@@ -31,6 +32,10 @@ Attachment.init(
     filename: DataTypes.STRING,
     uploadDate: DataTypes.DATE,
     fileType: DataTypes.STRING,
+    jokeID: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },

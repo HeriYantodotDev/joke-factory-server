@@ -1,10 +1,10 @@
 import request from 'supertest';
 import { app } from '../app';
+import path from 'path';
 import { User, UserHelperModel } from '../models';
 import { optionPostUser } from './UserRegister.test';
 import { sequelize } from '../config/database';
-import { Joke } from '../models/joke';
-import { Auth } from '../models';
+import { Auth, Joke, Attachment  } from '../models';
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 
@@ -23,6 +23,7 @@ beforeEach( async () => {
   await User.destroy({where: {}});
   await Auth.destroy({where: {}});
   await Joke.destroy({where: {}});
+  await Attachment.destroy({where: {}});
   // we don't have to destroy other databases, since if User is destroyed, other tables will be destroyed too.
 });
 
@@ -56,7 +57,24 @@ async function postJoke(
   if (options.token) {
     agent2.set('Authorization', `Bearer ${options.token}`);
   }
+
   return await agent2.send(body);
+}
+
+interface OptionUploadFile {
+  language?: string,
+}
+
+async function uploadFile(file = 'test-png.png', option: OptionUploadFile = {}) {
+  const filePath = path.join('.', 'src', '__tests__', 'resources', file);
+  const agent = request(app).post('/api/1.0/jokes/attachments');
+
+  if (option.language) {
+    agent.set('Accept-Language', option.language);
+  }
+    
+  const response = await agent.attach('file', filePath);
+  return response;
 }
 
 describe('Post Joke', () => {
@@ -216,4 +234,88 @@ describe('Post Joke', () => {
     const joke = jokes[0];
     expect(joke.userID).toBe(user[0].id);
   });
+
+  test('associates jokes with attachment in database', async () => {
+    const uploadResponse = await uploadFile();
+    const uploadedFileId = uploadResponse.body.id;
+
+
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    await postJoke(
+      {
+        content,
+        fileAttachment: uploadedFileId,
+      }, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+
+    const jokes = await Joke.findAll();
+
+    const joke = jokes[0];
+
+    const attachmentInDb = await Attachment.findOne({
+      where: {id: uploadedFileId},
+    });
+
+    expect(attachmentInDb?.jokeID).toBe(joke.id);
+  });
+
+  test('returns 200 Ok when the attachment doesn\'t exist', async () => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const response = await postJoke(
+      {
+        content,
+        fileAttachment: 1000,
+      }, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  test('keeps the old associate when new Joke submitted with a new attachment ID', async () => {
+    const uploadResponse = await uploadFile();
+    const uploadedFileId = uploadResponse.body.id;
+
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    await postJoke(
+      {
+        content,
+        fileAttachment: uploadedFileId,
+      }, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    const attachment = await Attachment.findOne({
+      where: {id: uploadedFileId},
+    });
+
+    await postJoke(
+      {
+        content : 'Next Content Of 2',
+        fileAttachment: uploadedFileId,
+      }, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    const attachmentAfterSecondPost = await Attachment.findOne({
+      where: {id: uploadedFileId},
+    });
+
+    expect(attachment?.jokeID).toBe(attachmentAfterSecondPost?.jokeID);
+  });
+
+
 });

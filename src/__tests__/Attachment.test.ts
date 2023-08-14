@@ -149,4 +149,9 @@ describe('Upload File for Joke', () => {
     fs.unlinkSync(filePath);
   });
 
+  test('returns attachment id in response', async () => {
+    const response = await uploadFile();
+    expect(Object.keys(response.body)).toEqual(['id']);
+  });
+
 });

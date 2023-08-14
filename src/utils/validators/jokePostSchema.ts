@@ -13,6 +13,7 @@ export const jokePostSchema = Joi.object({
       'string.min' : Locales.jokeContentSize,
       'string.max' : Locales.jokeContentSize,
     }),
+  fileAttachment: Joi.optional(),
 }).options({
     allowUnknown: false,
 }).messages({

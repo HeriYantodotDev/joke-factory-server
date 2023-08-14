@@ -7,10 +7,36 @@ export class AttachmentHelperModel {
   ) {
     const fileIdentification = identifyFileType(file.buffer);
     const filename = await FileUtils.saveAttachment(file, fileIdentification);
-    await Attachment.create({
+    const savedAttachment = await Attachment.create({
       filename,
       fileType: fileIdentification.fileType,
       uploadDate: new Date(),
     });
+
+    return {
+      id: savedAttachment.id,
+    }
+  }
+
+  public static async associateAttachmentToJoke(
+    fileAttachmentID: number,
+    jokeID: number
+  ) {
+    const attachment = await Attachment.findOne({
+      where: {
+        id: fileAttachmentID,
+      }
+    });
+
+    if (!attachment) {
+      return;
+    }
+
+    if (attachment.jokeID) {
+      return;
+    }
+
+    attachment.jokeID = jokeID;
+    await attachment.save();
   }
 }
