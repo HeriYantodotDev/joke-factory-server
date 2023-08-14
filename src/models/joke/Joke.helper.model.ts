@@ -1,10 +1,10 @@
 import { Joke } from './Joke.model';
-import { AttachmentHelperModel } from '../attachment';
+import { Attachment, AttachmentHelperModel } from '../attachment';
 import { 
   BodyRequestHttpPostJokeType,
   JokeObjectType,
   JokePaginationResponseTypes,
-  JokeContentResponseTypes
+  JokeContentResponseForClientTypes,
 } from './Joke.types';
 import { User, UserWithIDOnlyNumber } from '../user';
 
@@ -42,11 +42,18 @@ export class JokeHelperModel {
     const jokeList = await Joke.findAndCountAll({
       where: whereClause,
       attributes: ['id', 'content', 'timestamp'],
-      include: {
-        model: User,
-        as: 'user',
-        attributes: ['id', 'username', 'email', 'image'],
-      },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'email', 'image'],
+        },
+        {
+          model: Attachment,
+          as: 'attachment',
+          attributes: ['filename', 'fileType']
+        }
+      ],
       order: [['id', 'DESC']],
       limit: size,
       offset: page * size,
@@ -54,19 +61,46 @@ export class JokeHelperModel {
 
     const totalPages = JokeHelperModel.getPageCount( jokeList.count, size);
 
-    return JokeHelperModel.generateResUserPagination(jokeList.rows as unknown as JokeContentResponseTypes[], totalPages, page, size);
+    const properJokeList = JokeHelperModel.generateJokeList(jokeList.rows);
+
+    return JokeHelperModel.generateResUserPagination(
+      properJokeList as unknown as JokeContentResponseForClientTypes[], 
+      totalPages, 
+      page, 
+      size
+    );
   }
 
   public static getPageCount(userCount: number, size: number): number {
     return Math.ceil(userCount / size);
   }
 
+  public static generateJokeList(jokeList: Joke[]) {
+
+    const newContent = jokeList.map((joke) => {
+      const jokeAsJSON = joke.get({plain: true}) as any;
+      if (jokeAsJSON.attachment === null) {
+        delete jokeAsJSON.attachment;
+      }
+
+      if (jokeAsJSON.attachment) {
+        jokeAsJSON.fileAttachment = jokeAsJSON.attachment;
+        delete jokeAsJSON.attachment;
+      }
+
+      return jokeAsJSON;
+    });
+
+    return newContent; 
+  }
+
   public static generateResUserPagination(
-    jokeList: JokeContentResponseTypes[], 
+    jokeList: JokeContentResponseForClientTypes[], 
     totalPages: number, 
     page: number,
     size: number
   ): JokePaginationResponseTypes {
+
     return {
       content: jokeList,
       page,

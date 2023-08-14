@@ -49,4 +49,8 @@ Joke.init(
 Joke.hasOne(Attachment, {
   onDelete: 'cascade',
   foreignKey: 'jokeID'
+});
+
+Attachment.belongsTo(Joke, {
+  foreignKey: 'jokeID'
 })

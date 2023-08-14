@@ -16,13 +16,13 @@ export interface SuccessResponse {
 }
 
 export interface JokePaginationResponseTypes {
-  content: JokeContentResponseTypes[],
+  content: JokeContentResponseForClientTypes[],
   page: number,
   size: number,
   totalPages: number,
 }
 
-export interface JokeContentResponseTypes {
+export interface JokeContentResponseForClientTypes {
   id: number,
   content: string,
   timestamp: number,
@@ -31,5 +31,9 @@ export interface JokeContentResponseTypes {
     username: string,
     email: string,
     image: string,
+  }
+  fileAttachment?: {
+    filename: string,
+    fileType: string,
   }
 }

@@ -1112,9 +1112,146 @@ public static async associateAttachmentToJoke(
 }
 ```
 
-
-
 ## Attachment in Joke Listing
+
+Okay, now let's move to the listing part. 
+We're adding test to the `JokeListing.test.ts`: 
+
+```
+test('returns fileAttachment having filename, fileType if joke has any ', async () => {
+  const jokeIDs = await addJokes(1);
+  await addFileAttachment(jokeIDs[0]);
+
+  const response = await getJokes();
+  const joke = response.body.content[0];
+  const jokeKeys = Object.keys(joke);
+
+  expect(jokeKeys).toEqual(['id', 'content', 'timestamp', 'user', 'fileAttachment']);
+
+  const fileAttachmentKeys = Object.keys(joke.fileAttachment);
+
+  expect(fileAttachmentKeys).toEqual(['filename', 'fileType']);
+});
+```
+
+For this test, when we lists the jokes, we also would get the `fileAttachment` object which contains `filename`, and `fileType`. In this test, we have to ensure that we only return `fileAttachment` object we there's an attachment, if not than we don't have to return it. 
+
+Let's move to the `Joke.helper.model.ts`, we have to modify it a little bit so it returns the `attachment` data but we should control the response too:
+
+```
+public static async getAllJokes(
+  page: number, 
+  size: number,
+  userID: number | null = null,
+): Promise<JokePaginationResponseTypes>{
+
+  let whereClause = {};
+  if (userID) {
+    whereClause = {
+      userID
+    }
+  }
+
+  const jokeList = await Joke.findAndCountAll({
+    where: whereClause,
+    attributes: ['id', 'content', 'timestamp'],
+    include: [
+      {
+        model: User,
+        as: 'user',
+        attributes: ['id', 'username', 'email', 'image'],
+      },
+      {
+        model: Attachment,
+        as: 'attachment',
+        attributes: ['filename', 'fileType']
+      }
+    ],
+    order: [['id', 'DESC']],
+    limit: size,
+    offset: page * size,
+  });
+
+  const totalPages = JokeHelperModel.getPageCount( jokeList.count, size);
+
+  const properJokeList = JokeHelperModel.generateJokeList(jokeList.rows);
+
+  return JokeHelperModel.generateResUserPagination(
+    properJokeList as unknown as JokeContentResponseForClientTypes[], 
+    totalPages, 
+    page, 
+    size
+  );
+}
+
+public static generateJokeList(jokeList: Joke[]) {
+
+  const newContent = jokeList.map((joke) => {
+    const jokeAsJSON = joke.get({plain: true}) as any;
+    if (jokeAsJSON.attachment === null) {
+      delete jokeAsJSON.attachment;
+    }
+
+    if (jokeAsJSON.attachment) {
+      jokeAsJSON.fileAttachment = jokeAsJSON.attachment;
+      delete jokeAsJSON.attachment;
+    }
+
+    return jokeAsJSON;
+  });
+
+  return newContent; 
+}
+```
+
+And also the types :
+
+```
+export interface JokePaginationResponseTypes {
+  content: JokeContentResponseForClientTypes[],
+  page: number,
+  size: number,
+  totalPages: number,
+}
+
+export interface JokeContentResponseForClientTypes {
+  id: number,
+  content: string,
+  timestamp: number,
+  user: {
+    id: number,
+    username: string,
+    email: string,
+    image: string,
+  }
+  fileAttachment?: {
+    filename: string,
+    fileType: string,
+  }
+}
+```
+
+Great, now let's to move the end point in which we only ask for a user: 
+
+```
+test('returns fileAttachment having filename, fileType if joke has any ', async () => {
+  const user = await UserHelperModel.addMultipleNewUsers(1,0);
+  const jokeIDs = await addJokes(1, user[0].id);
+  await addFileAttachment(jokeIDs[0]);
+
+  const response = await getJokes(user[0].id);
+  const joke = response.body.content[0];
+  const jokeKeys = Object.keys(joke);
+
+  expect(jokeKeys).toEqual(['id', 'content', 'timestamp', 'user', 'fileAttachment']);
+
+  const fileAttachmentKeys = Object.keys(joke.fileAttachment);
+
+  expect(fileAttachmentKeys).toEqual(['filename', 'fileType']);
+});
+```
+
+This is also passing and we don't have to change anything. 
 
 ## Migration Scripts
 
