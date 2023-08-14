@@ -2,8 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import request from 'supertest';
 import { app } from '../app';
-
-import { User, Auth, Joke, JokePaginationResponseTypes, UserHelperModel} from '../models';
+import { User, Auth, Joke, Attachment, JokePaginationResponseTypes, UserHelperModel} from '../models';
 import { sequelize } from '../config/database';
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
@@ -29,11 +28,21 @@ beforeAll( async () => {
 beforeEach( async () => {
   await User.destroy({where: {}});
   await Auth.destroy({where: {}});
+  await Attachment.destroy({where: {}});
 });
 
 afterAll(async () => {
   await sequelize.close();
 });
+
+async function addFileAttachment(jokeID: number) {
+  await Attachment.create({
+    filename: `test-file-for-joke-${jokeID}`,
+    fileType: 'image/png',
+    jokeID,
+    uploadDate: new Date(),
+  });
+}
 
 describe('Listing All Jokes', () => {
   async function getJokes(page = 0 ) {
@@ -42,15 +51,19 @@ describe('Listing All Jokes', () => {
   }
 
   async function addJokes(count: number) {
+    const jokeIDs = [];
     const user = await UserHelperModel.addMultipleNewUsers(count,0);
     for (let i=0; i < count; i++) {
-      await Joke.create({
+      const joke = await Joke.create({
         content: `Content Of Great Jokes all ${i+1}`,
         timestamp: Date.now(),
         userID: user[i].id,
       });
+      jokeIDs.push(joke.id);
     }
+    return jokeIDs;
   }
+
 
   test('returns 200 ok when there are no jokes in database', async () => {
     const response = await getJokes();
@@ -78,6 +91,21 @@ describe('Listing All Jokes', () => {
     
     expect(jokeKeys).toEqual(['id', 'content', 'timestamp', 'user']);
     expect(userKeys).toEqual(['id', 'username', 'email', 'image']);
+  });
+
+  test('returns fileAttachment having filename, fileType if joke has any ', async () => {
+    const jokeIDs = await addJokes(1);
+    await addFileAttachment(jokeIDs[0]);
+
+    const response = await getJokes();
+    const joke = response.body.content[0];
+    const jokeKeys = Object.keys(joke);
+
+    expect(jokeKeys).toEqual(['id', 'content', 'timestamp', 'user', 'fileAttachment']);
+
+    const fileAttachmentKeys = Object.keys(joke.fileAttachment);
+
+    expect(fileAttachmentKeys).toEqual(['filename', 'fileType']);
   });
 
   test('returns 2 as totalPages when there are 11 Jokes', async () => {
@@ -148,6 +176,7 @@ interface option {
   page?: number,
   size?: number,
 }
+
 describe('Listing Jokes of a user', () => {
   async function getJokes(id: number, option:option = {} ) {
     const agent = request(app).get(`/api/1.0/users/${id}/jokes`);
@@ -166,13 +195,16 @@ describe('Listing Jokes of a user', () => {
   }
 
   async function addJokes(count: number, id: number) {
+    const jokeIDs = [];
     for (let i=0; i < count; i++) {
-      await Joke.create({
+      const joke = await Joke.create({
         content: `Content Of Great Jokes all ${i+1}`,
         timestamp: Date.now(),
         userID: id,
       });
+      jokeIDs.push(joke.id);
     }
+    return jokeIDs;
   }
 
   test('returns 200 ok when there are no jokes in database', async () => {
@@ -236,6 +268,22 @@ describe('Listing Jokes of a user', () => {
     
     expect(jokeKeys).toEqual(['id', 'content', 'timestamp', 'user']);
     expect(userKeys).toEqual(['id', 'username', 'email', 'image']);
+  });
+
+  test('returns fileAttachment having filename, fileType if joke has any ', async () => {
+    const user = await UserHelperModel.addMultipleNewUsers(1,0);
+    const jokeIDs = await addJokes(1, user[0].id);
+    await addFileAttachment(jokeIDs[0]);
+
+    const response = await getJokes(user[0].id);
+    const joke = response.body.content[0];
+    const jokeKeys = Object.keys(joke);
+
+    expect(jokeKeys).toEqual(['id', 'content', 'timestamp', 'user', 'fileAttachment']);
+
+    const fileAttachmentKeys = Object.keys(joke.fileAttachment);
+
+    expect(fileAttachmentKeys).toEqual(['filename', 'fileType']);
   });
 
   test('returns 2 as totalPages when there are 11 Jokes', async () => {
