@@ -1253,7 +1253,9 @@ test('returns fileAttachment having filename, fileType if joke has any ', async 
 
 This is also passing and we don't have to change anything. 
 
-## Migration Scripts
-
 ## Scheduled Service for Unused Attachment
+
+We will store the attachment, but the user might not post the joke. This will cause that we will have a lot of file that is not associated with any joke. 
+
+We should have a schedule service to clean up this file regularly. 
 
