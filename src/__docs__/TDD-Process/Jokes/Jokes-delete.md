@@ -350,6 +350,167 @@ public static async checkAndDeleteJoke(
 
 ## Updating Migration
 
-
+In the mean time, since it's pretty simple, I don't add constraint to the migration file. 
 
 ## User Delete
+
+We have User Delete functionality. However it's only delete the User and it's association in the database. However, we will still have the local file for Image and also for the joke attachment. 
+
+
+Here's the test:
+
+```
+test('removes profile image when user is deleted ', async() => {
+  const userList = await UserHelperModel.addMultipleNewUsers(1);
+  const user = userList[0];
+  const token = await auth({
+    auth: { 
+      email : emailUser1, 
+      password: passwordUser1,
+    }});
+  
+  const storedFileName = 'profile-image-for-user1';
+
+  const testFilePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+
+  const targetPath = path.join(profileFolder, storedFileName);
+
+  fs.copyFileSync(testFilePath, targetPath);
+
+  user.image = storedFileName;
+
+  await user.save();
+
+  await deleteUser(
+    user.id, 
+    {token}
+  );
+  
+  expect(fs.existsSync(targetPath)).toBe(false);
+  
+});
+```
+
+For the implementation in the `user.helper.model.ts` : 
+
+```
+public static async deleteUserByID(idParams: number) {
+  const user = await this.getActiveUserByID(idParams);
+
+  
+  if (!user) {
+    throw new ErrorUserNotFound();
+  }
+
+  if (user.image) {
+    await FileUtils.deleteProfileImage(user.image);
+  }
+    
+  await user.destroy();
+}
+```
+
+Now here's the last test to remove all of the attachment from a user from the local storage: 
+
+```
+test('deletes jokes attachment from local storage the database when sent from authorized user', async() => {
+  const userList = await UserHelperModel.addMultipleNewUsers(1);
+  const token = await auth({
+    auth: { 
+      email : emailUser1, 
+      password: passwordUser1,
+    }});
+  
+  const storedFileName = 'Joke-attachment-for-user';
+
+  const testFilePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+  const targetPath = path.join(attachmentFolder, storedFileName);
+  fs.copyFileSync(testFilePath, targetPath);
+  
+  const storedAttachment = await Attachment.create({
+    filename: storedFileName,
+    fileType: 'image/png',
+    uploadDate: new Date(),
+  });
+
+  await request(app)
+    .post('/api/1.0/jokes')
+    .set('Authorization', `Bearer ${token}`)
+    .send(
+      {
+        content: 'Jokes Content a lot!!!',
+        fileAttachment: storedAttachment.id,
+      }
+    );
+
+  await deleteUser(
+    userList[0].id, 
+    {token}
+  );
+  
+  const storedAttachmentAfterDelete = await Attachment.findOne({where: {id: storedAttachment.id}});
+  expect(storedAttachmentAfterDelete).toBeNull();
+
+  expect(fs.existsSync(targetPath)).toBe(false);
+});
+```
+
+Now for the implementation in the `user.helper.model.ts`, instead of calling each function one by one, we call all of them within one function : 
+
+```
+public static async deleteUserByID(idParams: number) {
+  const user = await this.getActiveUserByID(idParams);
+
+  
+  if (!user) {
+    throw new ErrorUserNotFound();
+  }
+
+  await FileUtils.deleteUserFiles(user);
+  await user.destroy();
+}
+```
+
+As you can see that we create a new function in the `File.utils.ts`: 
+
+```
+public static async deleteAttachment(filename: string) {
+  const filePath = path.join(attachmentFolder, filename);
+  try {
+    await fs.promises.access(filePath);
+    await fs.promises.unlink(filePath);
+  } catch (err) {
+    //
+  }
+}
+
+public static async deleteUserFiles(user: User) {
+  if (user.image) {
+    this.deleteProfileImage(user.image);
+  }
+
+  const attachments = await Attachment.findAll({
+    attributes: ['filename'],
+    include: {
+      model: Joke,
+      where: {
+        userID: user.id,
+      },
+    },
+  });
+
+  if (attachments.length === 0) {
+    return;
+  }
+
+  for (const attachment of attachments) {
+    const filename = attachment.getDataValue('filename');
+    await this.deleteAttachment(filename);
+  }
+}
+```
+
+Perfect, now we pass all of the tests. 
+
+
+

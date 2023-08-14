@@ -4,7 +4,7 @@ import { Op } from 'sequelize';
 import fs from 'fs';
 import path from 'path';
 
-import { Attachment, AuthHelperModel } from '../../models';
+import { Attachment, AuthHelperModel, Joke, User } from '../../models';
 
 import { IdentifyFileTypeResponse } from './identifyFileType';
 
@@ -89,6 +89,31 @@ export class FileUtils {
       await fs.promises.unlink(filePath);
     } catch (err) {
       //
+    }
+  }
+
+  public static async deleteUserFiles(user: User) {
+    if (user.image) {
+      this.deleteProfileImage(user.image);
+    }
+
+    const attachments = await Attachment.findAll({
+      attributes: ['filename'],
+      include: {
+        model: Joke,
+        where: {
+          userID: user.id,
+        },
+      },
+    });
+
+    if (attachments.length === 0) {
+      return;
+    }
+
+    for (const attachment of attachments) {
+      const filename = attachment.getDataValue('filename');
+      await this.deleteAttachment(filename);
     }
   }
 }

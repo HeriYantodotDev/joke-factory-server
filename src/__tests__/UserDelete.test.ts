@@ -2,15 +2,28 @@ import dotenv from 'dotenv';
 dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import request from 'supertest';
 import { app } from '../app';
-import { User, Auth, UserHelperModel, AuthHelperModel } from '../models';
+import { User, Auth, UserHelperModel, AuthHelperModel, Attachment } from '../models';
 import { optionPostUser } from './UserRegister.test';
 import { sequelize } from '../config/database';
 import { Joke } from '../models/joke';
+import fs from 'fs';
+import path from 'path';
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
 
 const emailUser1 = 'user1@gmail.com';
 const passwordUser1 = 'A4GuaN@SmZ';
+
+const uploadDir = process.env.uploadDir;
+if (!uploadDir) {
+  throw new Error('Something wrong with uploadDir in ENV');
+}
+
+const profileDir = 'profile';
+const attachmentDir = 'attachment';
+
+const profileFolder = path.join('.', uploadDir, profileDir);
+const attachmentFolder = path.join('.', uploadDir, attachmentDir);
 
 beforeAll( async () => {
   if (process.env.NODE_ENV === 'test') {
@@ -210,6 +223,74 @@ describe('User Delete', () => {
     const jokes = await Joke.findAll();
 
     expect(jokes.length).toBe(0);
+  });
+
+  test('removes profile image when user is deleted ', async() => {
+    const userList = await UserHelperModel.addMultipleNewUsers(1);
+    const user = userList[0];
+    const token = await auth({
+      auth: { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }});
+    
+    const storedFileName = 'profile-image-for-user1';
+    const testFilePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+    const targetPath = path.join(profileFolder, storedFileName);
+    fs.copyFileSync(testFilePath, targetPath);
+
+    user.image = storedFileName;
+
+    await user.save();
+
+    await deleteUser(
+      user.id, 
+      {token}
+    );
+    
+    expect(fs.existsSync(targetPath)).toBe(false);
+    
+  });
+
+  test('deletes jokes attachment from local storage the database when sent from authorized user', async() => {
+    const userList = await UserHelperModel.addMultipleNewUsers(1);
+    const token = await auth({
+      auth: { 
+        email : emailUser1, 
+        password: passwordUser1,
+      }});
+    
+    const storedFileName = 'Joke-attachment-for-user';
+
+    const testFilePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+    const targetPath = path.join(attachmentFolder, storedFileName);
+    fs.copyFileSync(testFilePath, targetPath);
+    
+    const storedAttachment = await Attachment.create({
+      filename: storedFileName,
+      fileType: 'image/png',
+      uploadDate: new Date(),
+    });
+
+    await request(app)
+      .post('/api/1.0/jokes')
+      .set('Authorization', `Bearer ${token}`)
+      .send(
+        {
+          content: 'Jokes Content a lot!!!',
+          fileAttachment: storedAttachment.id,
+        }
+      );
+
+    await deleteUser(
+      userList[0].id, 
+      {token}
+    );
+    
+    const storedAttachmentAfterDelete = await Attachment.findOne({where: {id: storedAttachment.id}});
+    expect(storedAttachmentAfterDelete).toBeNull();
+
+    expect(fs.existsSync(targetPath)).toBe(false);
   });
   
 });

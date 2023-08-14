@@ -10,7 +10,6 @@ import { optionPostUser } from './UserRegister.test';
 
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
-import exp from 'constants';
 
 const uploadDir = process.env.uploadDir;
 if (!uploadDir) {
