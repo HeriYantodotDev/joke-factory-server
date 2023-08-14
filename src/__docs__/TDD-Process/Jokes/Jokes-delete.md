@@ -253,6 +253,103 @@ Great now we're passing the test.
 
 ## Joke Delete - Cascade
 
+Ok now here's our test. In our test below: we not only testing for the joke to be removed from the database, but also for the attachment entry in the database, along with the local files: (there are some functions added to the test. Check the file test for the detail)
+
+```
+test('removes file Attachment the database when user deletes their jokes', async() => {
+  const users = await UserHelperModel.addMultipleNewUsers(1,0);
+  const user1 = users[0];
+  const joke = await addJokes(user1.id);
+  const attachment = await addAttachment(joke.id);
+
+  const token = await auth({auth: {
+    email: emailUser1,
+    password: passwordUser,
+  }});
+
+  await deleteJoke(joke.id, {token});
+
+  const attachmentInDB = await Attachment.findOne({where: {
+    id: attachment.id,
+  }});
+
+  expect(attachmentInDB).toBeNull(); 
+});
+
+test('removes file from the local storage when user deletes their jokes', async() => {
+  const users = await UserHelperModel.addMultipleNewUsers(1,0);
+  const user1 = users[0];
+  const joke = await addJokes(user1.id);
+  await addAttachment(joke.id);
+
+  const token = await auth({auth: {
+    email: emailUser1,
+    password: passwordUser,
+  }});
+
+  await deleteJoke(joke.id, {token});
+
+  expect(fs.existsSync(targetPath)).toBe(false);
+});
+```
+
+First off all let's create a new function to delete attachment in `File.util.ts`: 
+
+```
+public static async deleteAttachment(filename: string) {
+  const filePath = path.join(attachmentFolder, filename);
+  try {
+    await fs.promises.access(filePath);
+    await fs.promises.unlink(filePath);
+  } catch (err) {
+    //
+  }
+}
+```
+
+Now let's modify our function in the model helper function: 
+
+```
+public static async findJokeByIDAndUserID(
+  jokeID: number,
+  userID: number,
+){
+  const joke = await Joke.findOne(
+    { where: 
+      {
+        id: jokeID,
+        userID: userID
+      },
+      include: {
+        model: Attachment
+      }
+    });
+
+  return joke;
+}
+
+public static async checkAndDeleteJoke(
+  jokeID: number,
+  userID: number,
+) {
+  const joke = await JokeHelperModel.findJokeByIDAndUserID(jokeID, userID);
+
+  if (!joke) {
+    throw new ErrorAuthForbidden(Locales.unAuthJokeDelete);
+  }
+
+  const jokeJSON = joke.get({plain: true}) as any;
+
+  if (jokeJSON.attachment) {
+    await FileUtils.deleteAttachment(jokeJSON.attachment.filename);
+  }
+
+  await joke.destroy();
+}
+```
+
 ## Updating Migration
+
+
 
 ## User Delete

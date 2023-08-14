@@ -7,7 +7,7 @@ import {
   JokeContentResponseForClientTypes,
 } from './Joke.types';
 import { User, UserWithIDOnlyNumber } from '../user';
-import { ErrorAuthForbidden, Locales } from '../../utils';
+import { ErrorAuthForbidden, FileUtils, Locales } from '../../utils';
 
 
 export class JokeHelperModel {
@@ -113,10 +113,16 @@ export class JokeHelperModel {
     jokeID: number,
     userID: number,
   ){
-    const joke = await Joke.findOne({where: {
-      id: jokeID,
-      userID: userID
-    }});
+    const joke = await Joke.findOne(
+      { where: 
+        {
+          id: jokeID,
+          userID: userID
+        },
+        include: {
+          model: Attachment
+        }
+      });
 
     return joke;
   }
@@ -129,6 +135,12 @@ export class JokeHelperModel {
 
     if (!joke) {
       throw new ErrorAuthForbidden(Locales.unAuthJokeDelete);
+    }
+
+    const jokeJSON = joke.get({plain: true}) as any;
+
+    if (jokeJSON.attachment) {
+      await FileUtils.deleteAttachment(jokeJSON.attachment.filename);
     }
 
     await joke.destroy();
