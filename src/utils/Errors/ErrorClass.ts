@@ -75,3 +75,10 @@ export class ErrorAuthPost extends Error {
     super(message);
   }
 }
+
+export class ErrorFileSizeLimit extends Error {
+  public code = 400;
+  constructor(message = Locales.attachmentSizeLimit) {
+    super(message);
+  }
+}

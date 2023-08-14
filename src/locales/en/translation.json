@@ -31,5 +31,6 @@
   "jokeSubmitSuccess": "Joke is saved",
   "errorJokeContentEmpty": "\"content\" is not allowed to be empty",
   "errorJokeContentNull": "\"content\" must be a text",
-  "jokeContentSize": "\"content\" must be at least 10 characters long and no longer than 5000 characters"
+  "jokeContentSize": "\"content\" must be at least 10 characters long and no longer than 5000 characters",
+  "attachmentSizeLimit": "Uploaded file cannot be bigger than 5MB"
 }

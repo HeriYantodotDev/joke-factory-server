@@ -30,4 +30,5 @@ export enum Locales {
   errorJokeContentEmpty = 'errorJokeContentEmpty',
   errorJokeContentNull = 'errorJokeContentNull',
   jokeContentSize = 'jokeContentSize',
+  attachmentSizeLimit = 'attachmentSizeLimit'
 }

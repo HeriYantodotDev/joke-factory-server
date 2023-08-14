@@ -6,6 +6,8 @@ import { sequelize } from '../config/database';
 import fs from 'fs';
 import { app } from '../app';
 import { Attachment } from '../models';
+import en from '../locales/en/translation.json';
+import id from '../locales/id/translation.json';
 
 if (!process.env.uploadDir) {
   throw new Error('Please set up the uploadDir environment');
@@ -16,11 +18,19 @@ const attachmentDir = 'attachment';
 
 const attachmentFolder = path.join('.', uploadDir, attachmentDir);
 
-async function uploadFile(file = 'test-png.png') {
+interface OptionUploadFile {
+  language?: string,
+}
+
+async function uploadFile(file = 'test-png.png', option: OptionUploadFile = {}) {
   const filePath = path.join('.', 'src', '__tests__', 'resources', file);
-  const response = await request(app)
-    .post('/api/1.0/jokes/attachments')
-    .attach('file', filePath);
+  const agent = request(app).post('/api/1.0/jokes/attachments');
+
+  if (option.language) {
+    agent.set('Accept-Language', option.language);
+  }
+    
+  const response = await agent.attach('file', filePath);
   return response;
 }
 
@@ -81,7 +91,7 @@ describe('Upload File for Joke', () => {
     expect(attachment.fileType).toBe(fileType);
   });
 
-  test.only.each`
+  test.each`
   file                | fileExtension
   ${'test-png.png'}   | ${'png'}
   ${'test-png'}       | ${'png'}
@@ -102,4 +112,41 @@ describe('Upload File for Joke', () => {
     const filePath = path.join(attachmentFolder, attachment.filename );
     expect(fs.existsSync(filePath)).toBe(true);
   });
+
+  test('returns 400 when uploaded file size is bigger than 5 mb', async() => {
+    const five5MB = 5 * 1024 * 1024;
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'random-file');
+    fs.writeFileSync(filePath, 'a'.repeat(five5MB) + 'a');
+    const response = await uploadFile('random-file');
+    expect(response.status).toBe(400);
+    fs.unlinkSync(filePath);
+  });
+
+  test('returns 200 when uploaded file size is exactly 5 mb', async() => {
+    const five5MB = 5 * 1024 * 1024;
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'random-file');
+    fs.writeFileSync(filePath, 'a'.repeat(five5MB));
+    const response = await uploadFile('random-file');
+    expect(response.status).toBe(200);
+    fs.unlinkSync(filePath);
+  });
+
+  test.each`
+  lang        | message
+  ${'en'}     | ${en.attachmentSizeLimit}
+  ${'id'}     | ${id.attachmentSizeLimit}
+  `('returns $message if the attachment is >5MB and the language is $lang', async({lang, message}) => {
+    const nowInMS = Date.now();
+    const five5MB = 5 * 1024 * 1024;
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'random-file');
+    fs.writeFileSync(filePath, 'a'.repeat(five5MB) + 'a');
+    const response = await uploadFile('random-file', {language: lang});
+    const error = response.body;
+
+    expect(error.path).toBe('/api/1.0/jokes/attachments');
+    expect(error.message).toBe(message);
+    expect(error.timeStamp).toBeGreaterThan(nowInMS);
+    fs.unlinkSync(filePath);
+  });
+
 });
