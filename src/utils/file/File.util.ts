@@ -1,9 +1,10 @@
 import dotenv from 'dotenv';
 dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+import { Op } from 'sequelize';
 import fs from 'fs';
 import path from 'path';
 
-import { AuthHelperModel } from '../../models';
+import { Attachment, AuthHelperModel } from '../../models';
 
 import { IdentifyFileTypeResponse } from './identifyFileType';
 
@@ -56,5 +57,31 @@ export class FileUtils {
     const attachmentPath = path.join(attachmentFolder, filename);
     await fs.promises.writeFile(attachmentPath, file.buffer);
     return filename;
+  }
+
+  public static async removeUnusedAttachments() {
+    const ONE_DAY = (24 * 60 * 60 * 1000);
+    setInterval(async () => {
+      const oneDayOld = new Date(Date.now() - ONE_DAY);
+      const attachments = await Attachment.findAll({
+        where: {
+          uploadDate: {
+            [Op.lt]: oneDayOld,
+          },
+          jokeID: {
+            [Op.is]: null,
+          },
+        },
+      });
+
+      for (const attachment of attachments) {
+        const {filename} = attachment.get({plain: true});
+        await fs.promises.unlink(path.join(attachmentFolder, filename));
+        await attachment.destroy();
+      }
+
+    }, ONE_DAY);
+
+
   }
 }
