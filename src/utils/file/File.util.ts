@@ -81,4 +81,14 @@ export class FileUtils {
       }
     }, ONE_DAY);
   }
+
+  public static async deleteAttachment(filename: string) {
+    const filePath = path.join(attachmentFolder, filename);
+    try {
+      await fs.promises.access(filePath);
+      await fs.promises.unlink(filePath);
+    } catch (err) {
+      //
+    }
+  }
 }

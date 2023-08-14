@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 import request from 'supertest';
+import fs from 'fs';
+import path from 'path';
 import { app } from '../app';
 import { sequelize } from '../config/database';
 import { Attachment, User, Joke, UserHelperModel} from '../models';
@@ -8,6 +10,19 @@ import { optionPostUser } from './UserRegister.test';
 
 import en from '../locales/en/translation.json';
 import id from '../locales/id/translation.json';
+import exp from 'constants';
+
+const uploadDir = process.env.uploadDir;
+if (!uploadDir) {
+  throw new Error('Something wrong with uploadDir in ENV');
+}
+const attachmentDir = 'attachment';
+
+const attachmentFolder = path.join('.', uploadDir, attachmentDir);
+const filename = `test-file-joke-delete${Date.now()}`;
+
+const targetPath = path.join(attachmentFolder, filename);
+const testFilePath = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
 
 beforeAll( async () => {
   if (process.env.NODE_ENV === 'test') {
@@ -17,8 +32,9 @@ beforeAll( async () => {
 
 beforeEach( async () => {
   await User.destroy({where: {}});
-  await Attachment.destroy({where: {}});
-  await Joke.destroy({where: {}});
+  if (fs.existsSync(targetPath)){
+    fs.unlinkSync(targetPath);
+  }
 });
 
 afterAll(async () => {
@@ -72,6 +88,17 @@ async function addJokes(userID: number) {
     userID,
   });
   return joke;
+}
+
+async function addAttachment(jokeID: number) {
+  fs.copyFileSync(testFilePath, targetPath);
+  const attachment = await Attachment.create({
+    filename,
+    uploadDate: new Date(),
+    fileType: 'image/png',
+    jokeID,
+  });
+  return attachment;
 }
 
 describe('Delete Joke', () => {
@@ -143,7 +170,42 @@ describe('Delete Joke', () => {
       id: joke.id,
     }});
 
-    expect(jokeInDB).toBeNull();
-    
+    expect(jokeInDB).toBeNull(); 
+  });
+
+  test('removes file Attachment the database when user deletes their jokes', async() => {
+    const users = await UserHelperModel.addMultipleNewUsers(1,0);
+    const user1 = users[0];
+    const joke = await addJokes(user1.id);
+    const attachment = await addAttachment(joke.id);
+
+    const token = await auth({auth: {
+      email: emailUser1,
+      password: passwordUser,
+    }});
+
+    await deleteJoke(joke.id, {token});
+
+    const attachmentInDB = await Attachment.findOne({where: {
+      id: attachment.id,
+    }});
+
+    expect(attachmentInDB).toBeNull(); 
+  });
+
+  test('removes file from the local storage when user deletes their jokes', async() => {
+    const users = await UserHelperModel.addMultipleNewUsers(1,0);
+    const user1 = users[0];
+    const joke = await addJokes(user1.id);
+    await addAttachment(joke.id);
+
+    const token = await auth({auth: {
+      email: emailUser1,
+      password: passwordUser,
+    }});
+
+    await deleteJoke(joke.id, {token});
+
+    expect(fs.existsSync(targetPath)).toBe(false);
   });
 });
