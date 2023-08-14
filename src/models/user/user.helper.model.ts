@@ -232,10 +232,12 @@ export class UserHelperModel {
   public static async deleteUserByID(idParams: number) {
     const user = await this.getActiveUserByID(idParams);
 
+    
     if (!user) {
       throw new ErrorUserNotFound();
     }
 
+    await FileUtils.deleteUserFiles(user);
     await user.destroy();
   }
 
