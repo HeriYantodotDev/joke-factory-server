@@ -270,7 +270,7 @@ We already store the related information about attachment like the filename, and
   @use(uploadMW)
   jokesAttachmentPost(): void{}
   ```
-
+k
   Now in the controller helper, we are calling the same function, however this time we have `req.file` since the previous middleware adds it, so we have to change the type for the `req` like this: 
 
   ```
@@ -634,6 +634,85 @@ public static async saveAttachment(file: Express.Multer.File, fileIdentification
 
 
 ## File Size Limit
+We haven't checked the file size limit for this app. Therefore we're going to define a limit for it. 
+
+Now here's the test:
+- Test
+  ```
+  test('returns 400 when uploaded file size is bigger than 5 mb', async() => {
+    const five5MB = 5 * 1024 * 1024;
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'random-file');
+    fs.writeFileSync(filePath, 'a'.repeat(five5MB) + 'a');
+    const response = await uploadFile('random-file');
+    expect(response.status).toBe(400);
+    fs.unlinkSync(filePath);
+  });
+
+  test('returns 200 when uploaded file size is exactly 5 mb', async() => {
+    const five5MB = 5 * 1024 * 1024;
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'random-file');
+    fs.writeFileSync(filePath, 'a'.repeat(five5MB));
+    const response = await uploadFile('random-file');
+    expect(response.status).toBe(200);
+    fs.unlinkSync(filePath);
+  });
+
+  test.each`
+  lang        | message
+  ${'en'}     | ${en.attachmentSizeLimit}
+  ${'id'}     | ${id.attachmentSizeLimit}
+  `('returns $message if the attachment is >5MB and the language is $lang', async({lang, message}) => {
+    const nowInMS = Date.now();
+    const five5MB = 5 * 1024 * 1024;
+    const filePath = path.join('.', 'src', '__tests__', 'resources', 'random-file');
+    fs.writeFileSync(filePath, 'a'.repeat(five5MB) + 'a');
+    const response = await uploadFile('random-file', {language: lang});
+    const error = response.body;
+
+    expect(error.path).toBe('/api/1.0/jokes/attachments');
+    expect(error.message).toBe(message);
+    expect(error.timeStamp).toBeGreaterThan(nowInMS);
+    fs.unlinkSync(filePath);
+  });
+  ```
+- Implementation
+  What we need is to create our own middleware using `multer`. So let's remove the previous implementation about multer and add to its own module called `uploadMW`:
+  ```
+  import { RequestWithAuthenticatedUser, RequestWithFile} from '../../models';
+  import { Response, NextFunction } from 'express';
+  import multer from 'multer';
+  import { ErrorHandle, ErrorFileSizeLimit} from '../Errors';
+
+  const attachmentName = 'file';
+  const MAX_SIZE = (5 * 1024 * 1024) + 1;
+  const upload = multer({limits: {fileSize: MAX_SIZE} }).single(attachmentName);
+
+  export async function uploadMW(
+    req: RequestWithAuthenticatedUser & RequestWithFile,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    upload(req, res, (err) => {
+      if (err) {
+        ErrorHandle(new ErrorFileSizeLimit(), req, res, next);
+        return;
+      }
+      next();
+    });
+  }
+  ```
+
+  Also to create a translation and enum for this : `"attachmentSizeLimit": "Uploaded file cannot be bigger than 5MB"`. The next thing is to create a new error class: 
+  ```
+  export class ErrorFileSizeLimit extends Error {
+    public code = 400;
+    constructor(message = Locales.attachmentSizeLimit) {
+      super(message);
+    }
+  }
+  ```
+
+  Anyway this error classes gets bloated. I think I have to refactor it later, so it has a generic class error in which we call it and pass the message. Since all the code is 400. There are 8 classes not that we should handle all the time. 
 
 ## Attachment Joke Relationship
 

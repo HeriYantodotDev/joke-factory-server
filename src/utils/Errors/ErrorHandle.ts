@@ -9,7 +9,8 @@ import {
   ErrorAuthForbidden,
   ErrorEmailNotInuse,
   ErrorEntityTooLarge,
-  ErrorAuthPost
+  ErrorAuthPost,
+  ErrorFileSizeLimit
 } from './ErrorClass';
 import { ErrorResponse, ValidationErrorResponse } from '../../models';
 
@@ -48,6 +49,7 @@ export function ErrorHandle(err: unknown, req: Request, res: Response, next: Nex
     ErrorAuthForbidden,
     ErrorEmailNotInuse,
     ErrorAuthPost,
+    ErrorFileSizeLimit,
   ];
   ErrorGroupSimple.some((errorClass) => {
     if (err instanceof errorClass) {

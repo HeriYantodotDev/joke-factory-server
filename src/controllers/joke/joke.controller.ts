@@ -6,12 +6,9 @@ import { checkAuthMWForJokeRoutes,
   jokePostSchema,
   validationErrorGenerator,
   bodyValidatorMW,
-  paginationMW
+  paginationMW,
+  uploadMW
 } from '../../utils';
-
-const attachmentName = 'file';
-const upload = multer();
-const uploadMW = upload.single(attachmentName);
 
 const validationOption = {abortEarly: false};
 
