@@ -21,7 +21,6 @@ This project is built using the following technologies:
 - TypeScript
 - Node.js
 - Express.js
-- React
 - Sqlite3 (for test and development)
 - PostgreSQL (for production)
 

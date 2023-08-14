@@ -74,7 +74,7 @@ describe('Scheduled unused attachment clean up', () => {
     }
   });
 
-  test.only('removes the 24 hours old file with attachment entry if not associated in joke', async() => {
+  test('removes the 24 hours old file with attachment entry if not associated in joke', async() => {
     jest.useFakeTimers();
     fs.copyFileSync(testFile, targetPath);
     const uploadDate = new Date(Date.now() - (24 * 60 * 60 * 1000) - 1 );
@@ -122,7 +122,7 @@ describe('Scheduled unused attachment clean up', () => {
     }, 1000);
   });
 
-  test.only('keeps files younger than 23 hours and their database entry even without association ', async() => {
+  test('keeps files younger than 23 hours and their database entry even without association ', async() => {
     jest.useFakeTimers();
     fs.copyFileSync(testFile, targetPath);
     const uploadDate = new Date(Date.now() - (24 * 60 * 60 * 1000) );

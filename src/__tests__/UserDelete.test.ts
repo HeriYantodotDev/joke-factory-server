@@ -43,7 +43,7 @@ async function auth(options: optionAuth){
     token = await response.body.token;
   }
 
-  return await token;
+  return token;
 }
 
 async function deleteUser(
@@ -72,12 +72,12 @@ describe('User Delete', () => {
   language    | message
   ${'en'}     | ${en.unauthorizedUserDelete}
   ${'id'}     | ${id.unauthorizedUserDelete}
-  `('return error body with "$message" for unauthrized request when language is "$language"', 
+  `('return error body with "$message" for unauthorized request when language is "$language"', 
   async({language, message}) => {
-    const nowInMilis = new Date().getTime();
+    const nowInMS = new Date().getTime();
     const response = await deleteUser(5, {language});
     expect(response.body.path).toBe('/api/1.0/users/5');
-    expect(response.body.timeStamp).toBeGreaterThan(nowInMilis);
+    expect(response.body.timeStamp).toBeGreaterThan(nowInMS);
     expect(response.body.message).toBe(message);
   });
 

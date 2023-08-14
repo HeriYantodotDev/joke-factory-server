@@ -7,6 +7,7 @@ import {
   JokeContentResponseForClientTypes,
 } from './Joke.types';
 import { User, UserWithIDOnlyNumber } from '../user';
+import { ErrorAuthForbidden, Locales } from '../../utils';
 
 
 export class JokeHelperModel {
@@ -100,12 +101,36 @@ export class JokeHelperModel {
     page: number,
     size: number
   ): JokePaginationResponseTypes {
-
     return {
       content: jokeList,
       page,
       size,
       totalPages,
     };
+  }
+
+  public static async findJokeByIDAndUserID(
+    jokeID: number,
+    userID: number,
+  ){
+    const joke = await Joke.findOne({where: {
+      id: jokeID,
+      userID: userID
+    }});
+
+    return joke;
+  }
+
+  public static async checkAndDeleteJoke(
+    jokeID: number,
+    userID: number,
+  ) {
+    const joke = await JokeHelperModel.findJokeByIDAndUserID(jokeID, userID);
+
+    if (!joke) {
+      throw new ErrorAuthForbidden(Locales.unAuthJokeDelete);
+    }
+
+    await joke.destroy();
   }
 }

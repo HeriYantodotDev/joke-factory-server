@@ -32,5 +32,7 @@
   "errorJokeContentEmpty": "\"konten\" tidak boleh kosong",
   "errorJokeContentNull": "\"konten\" harus berupa text",
   "jokeContentSize": "\"konten\" minimal harus 3 karakter and tidak lebih dari 5000 karakter",
-  "attachmentSizeLimit": "File tidak boleh lebih dari 5MB"
+  "attachmentSizeLimit": "File tidak boleh lebih dari 5MB",
+  "unAuthJokeDelete": "Anda tidak diperbolehkan untuk menghapus Joke ini"
+
 }

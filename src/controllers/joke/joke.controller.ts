@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars */
-import { post, get, use, routerConfig } from '../../decorators'; 
+import { post, get, use, del, routerConfig } from '../../decorators'; 
 import multer from 'multer';
 import { JokeHelperController } from './joke.helper.controller';
 import { checkAuthMWForJokeRoutes,
@@ -26,6 +26,9 @@ class JokesController {
   @post('/attachments', JokeHelperController.httpJokeAttachmentPost )
   @use(uploadMW)
   jokesAttachmentPost(): void{}
+
+  @del('/:jokeID', JokeHelperController.httpDeleteJokeById)
+  jokesDelete(): void{}
 }
 
 @routerConfig('/api/1.0/users/:userID/jokes')

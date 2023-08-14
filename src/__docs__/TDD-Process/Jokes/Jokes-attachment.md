@@ -1259,3 +1259,153 @@ We will store the attachment, but the user might not post the joke. This will ca
 
 We should have a schedule service to clean up this file regularly. 
 
+Now let's create a test in the `FileService.test`:
+
+```
+describe('Scheduled unused attachment clean up', () => {
+  const filename = `test-file${Date.now()}`;
+  const testFile = path.join('.', 'src', '__tests__', 'resources', 'test-png.png');
+  const targetPath = path.join(attachmentFolder, filename);
+
+  async function addJokes(count: number) {
+    const jokeIDs = [];
+    const user = await UserHelperModel.addMultipleNewUsers(count,0);
+    for (let i=0; i < count; i++) {
+      const joke = await Joke.create({
+        content: `Content Of Great Jokes all ${i+1}`,
+        timestamp: Date.now(),
+        userID: user[i].id,
+      });
+      jokeIDs.push(joke.id);
+    }
+    return jokeIDs;
+  }
+
+
+  beforeEach(async() => {
+    if (fs.existsSync(targetPath)) {
+      fs.unlinkSync(targetPath);
+    }
+  });
+
+  test.only('removes the 24 hours old file with attachment entry if not associated in joke', async() => {
+    jest.useFakeTimers();
+    fs.copyFileSync(testFile, targetPath);
+    const uploadDate = new Date(Date.now() - (24 * 60 * 60 * 1000) - 1 );
+    const attach = await Attachment.create({
+      filename: filename,
+      uploadDate: uploadDate,
+      fileType: 'png',
+    });
+
+    await FileUtils.removeUnusedAttachments();
+    jest.advanceTimersByTime((24 * 60 * 60 * 1000) + 5000 );
+    setTimeout(async () => {
+      const attachmentAfterRemove = await Attachment.findOne({
+        where: {
+          id: attach.id,
+        },
+      });
+      expect(attachmentAfterRemove).toBe(null);
+      expect(fs.existsSync(targetPath)).toBe(false);
+    }, 1000);
+  });
+
+  test('keeps the files older than 24 hours and their database entry if there\'s an association ', async() => {
+    jest.useFakeTimers();
+    fs.copyFileSync(testFile, targetPath);
+    const id = await addJokes(1);
+    const uploadDate = new Date(Date.now() - (48 * 60 * 60 * 1000) + 1);
+    const attach = await Attachment.create({
+      filename: filename,
+      uploadDate: uploadDate,
+      fileType: 'png',
+      jokeID: id[0],
+    });
+
+    await FileUtils.removeUnusedAttachments();
+    jest.advanceTimersByTime((24 * 60 * 60 * 1000) + 5000 );
+    setTimeout(async () => {
+      const attachmentAfterRemove = await Attachment.findOne({
+        where: {
+          id: attach.id,
+        },
+      });
+      expect(attachmentAfterRemove).not.toBe(null);
+      expect(fs.existsSync(targetPath)).toBe(true);
+    }, 1000);
+  });
+
+  test.only('keeps files younger than 23 hours and their database entry even without association ', async() => {
+    jest.useFakeTimers();
+    fs.copyFileSync(testFile, targetPath);
+    const uploadDate = new Date(Date.now() - (24 * 60 * 60 * 1000) );
+    const attach = await Attachment.create({
+      filename: filename,
+      uploadDate: uploadDate,
+      fileType: 'png',
+    });
+  
+    await FileUtils.removeUnusedAttachments();
+    jest.advanceTimersByTime((23 * 60 * 60 * 1000) + 5000 );
+    setTimeout(async () => { 
+      const attachmentAfterRemove = await Attachment.findOne({
+        where: {
+          id: attach.id,
+        },
+      });
+  
+      expect(attachmentAfterRemove).not.toBe(null);
+      expect(fs.existsSync(targetPath)).toBe(true);
+    }, 1000);
+  });
+});
+```
+
+And here's the implementation: 
+
+```
+public static async removeUnusedAttachments() {
+  const ONE_DAY = (24 * 60 * 60 * 1000);
+  setInterval(async () => {
+    const oneDayOld = new Date(Date.now() - ONE_DAY);
+    const attachments = await Attachment.findAll({
+      where: {
+        uploadDate: {
+          [Op.lt]: oneDayOld,
+        },
+        jokeID: {
+          [Op.is]: null,
+        },
+      },
+    });
+
+    for (const attachment of attachments) {
+      const {filename} = attachment.get({plain: true});
+      await fs.promises.unlink(path.join(attachmentFolder, filename));
+      await attachment.destroy();
+    }
+  }, ONE_DAY);
+}
+```
+
+The last thing is to add this function in our `index.ts`: 
+
+```
+import { app } from './app';
+import { sequelize } from './config/database';
+import { AuthHelperModel } from './models';
+import { logger, FileUtils} from './utils';
+
+const PORT = process.env.port || 3000;
+
+sequelize.sync();
+
+AuthHelperModel.scheduleCleanUp();
+FileUtils.removeUnusedAttachments();
+
+app.listen(PORT, () => {
+  logger.info(`Listening to port ... ${PORT}. Version: ${process.env.npm_package_version}`);
+});
+
+```
