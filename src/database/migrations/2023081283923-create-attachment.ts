@@ -15,6 +15,15 @@ module.exports = {
       fileType: {
         type: Sequelize.STRING,
       },
+      jokeID: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'jokes',
+          key: 'id'
+        },
+        onDelete: 'cascade'
+      },
       uploadDate: {
         type: Sequelize.DATE,
       },

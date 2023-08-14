@@ -2,6 +2,7 @@ import { Joke } from './Joke.model';
 
 export interface BodyRequestHttpPostJokeType {
   content: string,
+  fileAttachment?: number,
 }
 
 export interface JokeObjectType {

@@ -715,6 +715,404 @@ Now here's the test:
   Anyway this error classes gets bloated. I think I have to refactor it later, so it has a generic class error in which we call it and pass the message. Since all the code is 400. There are 8 classes not that we should handle all the time. 
 
 ## Attachment Joke Relationship
+Now let's the association between the attachment and the jokes. 
+
+Let's create the test:
+- test:
+  ```
+  test('returns attachment id in response', async () => {
+    const response = await uploadFile();
+    expect(Object.keys(response.body)).toEqual(['id']);
+  });
+  ```
+  This checks whether the end point sends back the object contains id for the attachment. 
+- implementation: 
+  In the `attachment.helper.model.ts`:
+  ```
+  public static async createAttachment(
+    file: Express.Multer.File
+  ) {
+    const fileIdentification = identifyFileType(file.buffer);
+    const filename = await FileUtils.saveAttachment(file, fileIdentification);
+    const savedAttachment = await Attachment.create({
+      filename,
+      fileType: fileIdentification.fileType,
+      uploadDate: new Date(),
+    });
+
+    return {
+      id: savedAttachment.id,
+    }
+  }
+  ```
+  We just return the ID of the new attachment entries. 
+
+  And in the `joke.helper.controller.ts`: 
+  ```
+  public static async httpJokeAttachmentPost(
+    req: RequestWithAuthenticatedUser & RequestWithFile,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.file) {
+        throw new Error('Something wrong with the Multer Module, please check it');
+      }
+  
+      const attachmentObject = await AttachmentHelperModel.createAttachment(req.file);
+      res.send(attachmentObject);
+      return;
+    }
+    catch (err) {
+      next(err);
+      return;
+    }
+  }
+  ```
+  We just send it to the client. 
+
+
+Now let's create a new test in the `JokeSubmit.test.ts` :
+
+```
+test('associates jokes with attachment in database', async () => {
+  const uploadResponse = await uploadFile();
+  const uploadedFileId = uploadResponse.body.id;
+
+  const user = await UserHelperModel.addMultipleNewUsers(1,0);
+
+  await postJoke(
+    {
+      content,
+      fileAttachment: uploadedFileId,
+    }, 
+    {
+      auth: {email: emailUser1, password: passwordUser1},
+    }
+  );
+
+  const jokes = await Joke.findAll();
+  const joke = jokes[0];
+
+  const attachmentInDb = await Attachment.findOne({
+    where: {id: uploadedFileId},
+  });
+
+  expect(attachmentInDb.jokeID).toBe(joke.id);
+});
+```
+
+In this test, we uploaded a file, and then make a post request to joke endpoint wit the attachment ID. Then we are checking if the entries in the attachment has the joke.id.
+
+So how's the implementation? 
+- Update the model and also the migration file: 
+  First we have to update the model for Joke and also Attachment: 
+  `Joke.model.ts`:
+  ```
+  import {
+    Model,
+    InferAttributes,
+    InferCreationAttributes,
+    CreationOptional,
+    DataTypes,
+    ForeignKey
+  } from 'sequelize';
+
+  import { sequelize } from '../../config/database';
+
+  import { Attachment } from '../attachment';
+
+  export class Joke extends Model<
+    InferAttributes<Joke>,
+    InferCreationAttributes<Joke>
+  > {
+    declare id: CreationOptional<number>;
+    declare content: string;
+    declare timestamp: CreationOptional<number>;
+    declare userID: ForeignKey<number>;
+    declare createdAt: CreationOptional<Date>;
+    declare updatedAt: CreationOptional<Date>;
+  }
+
+  Joke.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      content: {
+        type: DataTypes.STRING,
+      },
+      timestamp: DataTypes.BIGINT,
+      userID: {
+        type: DataTypes.INTEGER,
+      },
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
+    },
+    {
+      sequelize,
+      modelName: 'joke',
+    }
+  );
+
+  Joke.hasOne(Attachment, {
+    onDelete: 'cascade',
+    foreignKey: 'jokeID'
+  })
+
+  ```
+  And here's for the `Attachment.model.ts`:
+  ```
+  import {
+    Model,
+    InferAttributes,
+    InferCreationAttributes,
+    CreationOptional,
+    DataTypes,
+    ForeignKey
+  } from 'sequelize';
+
+  import { sequelize } from '../../config/database';
+
+  export class Attachment extends Model<
+    InferAttributes<Attachment>,
+    InferCreationAttributes<Attachment>
+  > {
+    declare id: CreationOptional<number>;
+    declare filename: string;
+    declare uploadDate: Date;
+    declare fileType: string;
+    declare jokeID: ForeignKey<number | null>;
+    declare createdAt: CreationOptional<Date>;
+    declare updatedAt: CreationOptional<Date>;
+  }
+
+  Attachment.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      filename: DataTypes.STRING,
+      uploadDate: DataTypes.DATE,
+      fileType: DataTypes.STRING,
+      jokeID: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      createdAt: DataTypes.DATE,
+      updatedAt: DataTypes.DATE,
+    },
+    {
+      sequelize,
+      modelName: 'attachment',
+    }
+  );
+  ```
+
+  Now for the create-attachments migration file: 
+
+  ```
+  import { QueryInterface, DataTypes } from 'sequelize';
+
+  module.exports = {
+    async up(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+      await queryInterface.createTable('attachments', {
+        id: {
+          allowNull: false,
+          type: Sequelize.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+        },
+        filename: {
+          type: Sequelize.STRING,
+        },
+        fileType: {
+          type: Sequelize.STRING,
+        },
+        jokeID: {
+          type: Sequelize.INTEGER,
+          allowNull: true,
+          references: {
+            model: 'jokes',
+            key: 'id'
+          },
+          onDelete: 'cascade'
+        },
+        uploadDate: {
+          type: Sequelize.DATE,
+        },
+        createdAt: Sequelize.DATE,
+        updatedAt: Sequelize.DATE,
+      });
+    },
+
+    async down(queryInterface: QueryInterface, Sequelize: typeof DataTypes) {
+      await queryInterface.dropTable('attachments');
+    }
+  }
+  ```
+
+- Function Update
+  In the `Attachment.helper.model.ts` we add a new function: 
+  ```
+  public static async associateAttachmentToJoke(
+    fileAttachmentID: number,
+    jokeID: number
+  ) {
+    const attachment = await Attachment.findOne({
+      where: {
+        id: fileAttachmentID,
+      }
+    });
+
+    if (!attachment) {
+      throw new Error('Something wrong with the fileAttachment');
+    }
+
+    attachment.jokeID = jokeID;
+
+    await attachment.save();
+  }
+  ```
+
+  Great now, we have to call this function inside `Joke.helper.model`:
+  ```
+  public static async createJoke(
+    body: BodyRequestHttpPostJokeType,
+    user: UserWithIDOnlyNumber
+  ) {
+    const joke: JokeObjectType = {
+      content: body.content,
+      timestamp: Date.now(),
+      userID: user.id,
+    }
+    
+    const {id} = await Joke.create(joke);
+    if (body.fileAttachment) {
+      await AttachmentHelperModel.associateAttachmentToJoke(body.fileAttachment, id);
+    }
+  }
+  ```
+
+  In the function above we check if the client also sends the fileAttachment, if yes, then we will create an association between them. 
+
+  Last thing is about our validation. In our validation, we don't allow custom field, so we need to add `fileAttachment` as an optional: 
+
+  ```
+  import Joi from 'joi';
+  import { Locales } from '../Enum';
+
+  export const jokePostSchema = Joi.object({
+    content: Joi.string()
+      .required()
+      .min(10)
+      .max(5000)
+      .messages({
+        'any.required': Locales.errorJokeContentEmpty,
+        'string.empty': Locales.errorJokeContentEmpty,
+        'string.base': Locales.errorJokeContentNull,
+        'string.min' : Locales.jokeContentSize,
+        'string.max' : Locales.jokeContentSize,
+      }),
+    fileAttachment: Joi.optional(),
+  }).options({
+      allowUnknown: false,
+  }).messages({
+    'object.unknown': Locales.customFieldNotAllowed,
+  });
+  ```
+
+Now let's add another test to make our implementation is stable: 
+
+```
+  test('returns 200 Ok when the attachment doesn\'t exist', async () => {
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    const response = await postJoke(
+      {
+        content,
+        fileAttachment: 1000,
+      }, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  test('keeps the old associate when new Joke submitted with a new attachment ID', async () => {
+    const uploadResponse = await uploadFile();
+    const uploadedFileId = uploadResponse.body.id;
+
+    await UserHelperModel.addMultipleNewUsers(1,0);
+
+    await postJoke(
+      {
+        content,
+        fileAttachment: uploadedFileId,
+      }, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    const attachment = await Attachment.findOne({
+      where: {id: uploadedFileId},
+    });
+
+    await postJoke(
+      {
+        content : 'Next Content Of 2',
+        fileAttachment: uploadedFileId,
+      }, 
+      {
+        auth: {email: emailUser1, password: passwordUser1},
+      }
+    );
+
+    const attachmentAfterSecondPost = await Attachment.findOne({
+      where: {id: uploadedFileId},
+    });
+
+    expect(attachment?.jokeID).toBe(attachmentAfterSecondPost?.jokeID);
+  });
+
+```
+
+Great now those two test will check even though the fileAttachment is invalid, saving to the database is still successful. Also if it's already associated, then we don't change it. 
+
+The implementation is simple we only checks for whether the attachment exist or attachment.jokeID exist then return the function: 
+
+```
+public static async associateAttachmentToJoke(
+  fileAttachmentID: number,
+  jokeID: number
+) {
+  const attachment = await Attachment.findOne({
+    where: {
+      id: fileAttachmentID,
+    }
+  });
+
+  if (!attachment) {
+    return;
+  }
+
+  if (attachment.jokeID) {
+    return;
+  }
+
+  attachment.jokeID = jokeID;
+  await attachment.save();
+}
+```
+
+
 
 ## Attachment in Joke Listing
 

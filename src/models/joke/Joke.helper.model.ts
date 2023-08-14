@@ -1,4 +1,5 @@
 import { Joke } from './Joke.model';
+import { AttachmentHelperModel } from '../attachment';
 import { 
   BodyRequestHttpPostJokeType,
   JokeObjectType,
@@ -19,7 +20,10 @@ export class JokeHelperModel {
       userID: user.id,
     }
     
-    await Joke.create(joke);
+    const {id} = await Joke.create(joke);
+    if (body.fileAttachment) {
+      await AttachmentHelperModel.associateAttachmentToJoke(body.fileAttachment, id);
+    }
   }
 
   public static async getAllJokes(

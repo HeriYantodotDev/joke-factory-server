@@ -87,11 +87,18 @@ export class JokeHelperController {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (!req.file) {
-      throw new Error('Something wrong with the Multer Module, please check it');
+    try {
+      if (!req.file) {
+        throw new Error('Something wrong with the Multer Module, please check it');
+      }
+  
+      const attachmentObject = await AttachmentHelperModel.createAttachment(req.file);
+      res.send(attachmentObject);
+      return;
     }
-
-    await AttachmentHelperModel.createAttachment(req.file);
-    res.send();
+    catch (err) {
+      next(err);
+      return;
+    }
   }
 }

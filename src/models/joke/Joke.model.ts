@@ -9,6 +9,8 @@ import {
 
 import { sequelize } from '../../config/database';
 
+import { Attachment } from '../attachment';
+
 export class Joke extends Model<
   InferAttributes<Joke>,
   InferCreationAttributes<Joke>
@@ -43,3 +45,8 @@ Joke.init(
     modelName: 'joke',
   }
 );
+
+Joke.hasOne(Attachment, {
+  onDelete: 'cascade',
+  foreignKey: 'jokeID'
+})
