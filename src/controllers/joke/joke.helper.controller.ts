@@ -9,7 +9,7 @@ import { UserWithIDOnlyNumber,
   AttachmentHelperModel,
   RequestWithFile
 } from '../../models';
-import { ErrorUserNotFound } from '../../utils';
+import { ErrorUserNotFound, ErrorAuthForbidden } from '../../utils';
 
 export class JokeHelperController {
 
@@ -99,6 +99,28 @@ export class JokeHelperController {
     catch (err) {
       next(err);
       return;
+    }
+  }
+
+  public static async httpDeleteJokeById(
+    req: RequestWithAuthenticatedUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const authenticatedUser = req.authenticatedUser;
+      const jokeID = Number(req.params.jokeID);
+
+      if (!authenticatedUser || !authenticatedUser?.id) {
+        throw new ErrorAuthForbidden(Locales.unAuthJokeDelete);
+      }
+      
+      await JokeHelperModel.checkAndDeleteJoke(jokeID, authenticatedUser.id);
+
+      res.send();
+
+    } catch (err) {
+      next(err);
     }
   }
 }

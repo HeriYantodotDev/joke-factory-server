@@ -79,9 +79,6 @@ export class FileUtils {
         await fs.promises.unlink(path.join(attachmentFolder, filename));
         await attachment.destroy();
       }
-
     }, ONE_DAY);
-
-
   }
 }
