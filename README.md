@@ -32,9 +32,6 @@ This considerate inclusion empowers you to seamlessly initiate test and developm
 - `npm install`
 - `npm run dev`
 
-## Current Status
-Working In Progress
-
 ## Main Technologies Used
 This project is built using the following technologies:
 - TypeScript / JavaScript
