@@ -511,6 +511,3 @@ public static async deleteUserFiles(user: User) {
 ```
 
 Perfect, now we pass all of the tests. 
-
-
-
