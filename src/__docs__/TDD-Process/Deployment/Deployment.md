@@ -92,13 +92,3 @@ export async function sendPasswordReset(user: User): Promise<void | Error> {
   logger.info(link);
 }
 ```
-
-
-
-## Automating Deployment
-
-## 
-
-## 
-
-## 
