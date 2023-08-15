@@ -8,6 +8,7 @@ Here are the essential links you'll need to navigate through this project with e
 - Take a peek at the live app right here: [Live Demo](https://joke-factory.heriyanto.dev)
 - If you're ready to dive into the nitty-gritty, here's the API URL that's at the heart of it all: [API URL](https://joke-factory-server.fly.dev).
 - For those curious minds who want to explore under the hood, here's the source code for the FrontEnd: [Joke-Factory-Client GitHub](https://github.com/HeriYantodotDev/joke-factory-client)
+- Here's the detail about this backend project: [link](https://www.showwcase.com/show/36272/fun-project-joke-factory-backend). 
 
 ## Getting Started 
 
@@ -112,3 +113,37 @@ This project is built using the following technologies:
 
 If you're interested with how I developed the app using TDD method. you can check the full documentation here: [TDD-Process.md](./src/__docs__/TDD-Process/README.md)
 
+## APIs: 
+
+### users
+- /api/1.0/users
+  - post
+  - get
+- /api/1.0/users/:id
+  - get
+  - put
+  - del
+- /api/1.0/users/token/:token
+  - post
+- /api/1.0/user/password
+  - post
+  - put
+
+### auth
+- /api/1.0/auth
+  - post
+- /api/1.0/auth/localfailure
+  - get
+- /api/1.0/logout
+  - post
+
+### joke
+- /api/1.0/jokes
+  - post
+  - get
+- /api/1.0/jokes/attachments
+  - post
+- /api/1.0/jokes/:jokeID
+  - delete
+- /api/1.0/users/:userID/jokes
+  - get
